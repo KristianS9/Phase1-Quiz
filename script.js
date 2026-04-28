@@ -2,9 +2,11 @@
 // ═══════════════════════════════════════════════════════════════
 // VERSION & CHANGELOG
 // ═══════════════════════════════════════════════════════════════
-const QUIZ_VERSION = "v20.0";
+const QUIZ_VERSION = "v21.0";
 
 const CHANGELOG = [
+  { version:"v21.0", date:"28 Apr 2026", summary:"Enhanced stats page with charts and progress tracking",
+    changes:["Score trend line chart showing improvement over time (Chart.js)","Topic accuracy horizontal bar chart — green/amber/red by lecture","Time filters: 7-day, 30-day, all-time — dynamically filter all stats","Key stats row: avg score, best score, attempt count, weakest topic","Recommendations panel — auto-generated revision suggestions based on weak topics and score trends","Individual attempts table — every attempt with date, score, correct count, and mode","Fixed missing CSS classes for stat cards, score bars, and tables"] },
   { version:"v20.0", date:"22 Apr 2026", summary:"Distractor audit — harder, clinically competitive distractors",
     changes:["Audited 775 questions for 5 systematic distractor quality issues","Fixed 34 questions with severe length bias: mechanism text moved out of correct option into explanation; all 5 options now equalised in length and specificity","Fixed 28 questions with trivially short distractors: wrong options elevated to same clinical detail and parallel structure as correct","Fixed parenthetical-only cues: removed embedded explanations from answer options across all blocks","Fixed categorical mismatch: distractors now drawn from same conceptual category (enzyme vs enzyme, mechanism vs mechanism)","Fixed asymmetric specificity: all distractors now include clinical mechanisms, not just vague noun labels","Questions affected span all 5 blocks; correct answers unchanged throughout"] },
   { version:"v19.0", date:"22 Apr 2026", summary:"Hybrid Notion sourcing + academic citations for all explanations",
