@@ -1813,6 +1813,50 @@ function showHistory() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// STATS HELPERS
+// ═══════════════════════════════════════════════════════════════
+function filterAttemptsByTime(attempts, period) {
+  if (period === 'all') return attempts;
+  const cutoff = Date.now() - (period === '7d' ? 7 : 30) * 864e5;
+  return attempts.filter(a => new Date(a.date).getTime() >= cutoff);
+}
+
+function computeTopicStats(attempts) {
+  const topics = {};
+  for (const a of attempts) {
+    for (const [lec, s] of Object.entries(a.breakdown || {})) {
+      if (!topics[lec]) topics[lec] = { answered: 0, correct: 0 };
+      topics[lec].answered += s.answered;
+      topics[lec].correct  += s.correct;
+    }
+  }
+  return Object.entries(topics)
+    .filter(([, s]) => s.answered > 0)
+    .map(([name, s]) => ({ name, pct: Math.round(s.correct / s.answered * 100), answered: s.answered, correct: s.correct }))
+    .sort((a, b) => a.pct - b.pct);
+}
+
+function generateRecommendations(topicStats, attempts) {
+  const recs = [];
+  topicStats.filter(t => t.pct < 50).slice(0, 3).forEach(t =>
+    recs.push('Revise "' + t.name + '" \u2014 ' + t.pct + '% accuracy')
+  );
+  const recent = attempts.slice(-3);
+  if (recent.length === 3 && recent.every(a => a.pct < 60))
+    recs.push('Retake the quiz \u2014 last 3 attempts averaged below 60%');
+  const last5 = attempts.slice(-5);
+  if (last5.length >= 3) {
+    const trend = last5[last5.length - 1].pct - last5[0].pct;
+    if (trend > 10)  recs.push('Great improvement \u2014 keep going!');
+    else if (trend < -10) recs.push('Scores declining \u2014 consider reviewing recent topics');
+  }
+  return recs.length ? recs : ['All topics look solid. Keep practising!'];
+}
+
+let trendChartInstance = null;
+let topicChartInstance = null;
+
+// ═══════════════════════════════════════════════════════════════
 // SUMMARY STATS
 // ═══════════════════════════════════════════════════════════════
 function showAllStats() {
@@ -1828,6 +1872,7 @@ function showAllStats() {
       document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
       t.classList.add('on');
       statsSortOrder = 'default';
+      statsPeriod = 'all';
       renderStats(id);
     };
     tabs.appendChild(t);
@@ -1837,81 +1882,183 @@ function showAllStats() {
 
 // Sort state for summary stats: 'default' | 'asc' | 'desc'
 let statsSortOrder = 'default';
+// Time filter for summary stats: 'all' | '30d' | '7d'
+let statsPeriod = 'all';
 
-function renderStats(blockId) {
+function renderStats(blockId, period) {
+  if (period !== undefined) statsPeriod = period;
+  const p = statsPeriod;
+
+  // --- Cumulative lecture stats (all-time, for the breakdown table) ---
   const b = BLOCKS[blockId];
   const s = allStats[blockId] || {};
   let totalQ = 0, totalAns = 0, totalCor = 0;
   Object.values(b.lectures).forEach(qs => totalQ += qs.length);
   Object.values(s).forEach(ls => { totalAns += ls.answered; totalCor += ls.correct; });
-  const pct = totalAns ? Math.round(totalCor/totalAns*100) : null;
+  const overallPct = totalAns ? Math.round(totalCor / totalAns * 100) : null;
 
-  // Build lecture data array for sorting
+  // --- Attempt-based stats (time-filtered) ---
+  const blockAttempts = filterAttemptsByTime(
+    allAttempts.filter(a => a.blockId === blockId), p
+  ).sort((a, bv) => new Date(a.date) - new Date(bv.date));
+  const topicStats = computeTopicStats(blockAttempts);
+  const recs = generateRecommendations(topicStats, blockAttempts);
+  const avgScore  = blockAttempts.length ? Math.round(blockAttempts.reduce((acc, a) => acc + a.pct, 0) / blockAttempts.length) : null;
+  const bestScore = blockAttempts.length ? Math.max(...blockAttempts.map(a => a.pct)) : null;
+  const weakest   = topicStats.length ? topicStats[0].name : '\u2014';
+
+  // --- Lecture breakdown table (sort logic unchanged) ---
   let lecData = Object.entries(b.lectures).map(([lec, qs]) => {
-    const ls = s[lec] || {answered:0, correct:0};
-    const p = ls.answered ? Math.round(ls.correct/ls.answered*100) : null;
-    return { lec, qs, ls, p };
+    const ls = s[lec] || { answered: 0, correct: 0 };
+    const lp = ls.answered ? Math.round(ls.correct / ls.answered * 100) : null;
+    return { lec, qs, ls, p: lp };
   });
-
-  // Apply sort
   if (statsSortOrder === 'asc') {
-    // Low → high (weakest first): nulls last
-    lecData.sort((a, b) => {
-      if (a.p === null && b.p === null) return 0;
+    lecData.sort((a, bv) => {
+      if (a.p === null && bv.p === null) return 0;
       if (a.p === null) return 1;
-      if (b.p === null) return 1;
-      return a.p - b.p;
+      if (bv.p === null) return 1;
+      return a.p - bv.p;
     });
   } else if (statsSortOrder === 'desc') {
-    // High → low (strongest first): nulls last
-    lecData.sort((a, b) => {
-      if (a.p === null && b.p === null) return 0;
+    lecData.sort((a, bv) => {
+      if (a.p === null && bv.p === null) return 0;
       if (a.p === null) return 1;
-      if (b.p === null) return 1;
-      return b.p - a.p;
+      if (bv.p === null) return 1;
+      return bv.p - a.p;
     });
   }
-  // 'default' = lecture order as defined
-
-  // Sort button label and aria
-  const sortLabels = { default: '↕ Sort by score', asc: '↑ Lowest first', desc: '↓ Highest first' };
+  const sortLabels = { default: '\u2195 Sort by score', asc: '\u2191 Lowest first', desc: '\u2193 Highest first' };
   const nextSort   = { default: 'asc', asc: 'desc', desc: 'default' };
 
   let rows = '';
-  lecData.forEach(({ lec, qs, ls, p }) => {
+  lecData.forEach(({ lec, qs, ls, p: lp }) => {
     const lost = ls.answered - ls.correct;
-    const barCls = p === null ? '' : p >= 70 ? 'bar-g' : p >= 50 ? 'bar-a' : 'bar-r';
-    rows += `<tr>
-      <td style="font-size:13px;max-width:220px">${lec}</td>
-      <td style="text-align:center;font-size:12px">${qs.length}</td>
-      <td style="text-align:center;font-size:12px">${ls.answered}</td>
-      <td style="text-align:center"><span class="lost-badge ${lost>0&&ls.answered>0?'lost-bad':'lost-ok'}">${lost&&ls.answered?lost:'–'}</span></td>
-      <td style="min-width:110px">
-        ${p !== null ? `<div class="bar-cell"><div class="bar-bg"><div class="bar-fill ${barCls}" style="width:${p}%"></div></div><span class="pct-label">${p}%</span></div>` : '<span style="font-size:12px;color:var(--text3)">–</span>'}
-      </td>
-    </tr>`;
+    const barCls = lp === null ? '' : lp >= 70 ? 'bar-g' : lp >= 50 ? 'bar-a' : 'bar-r';
+    rows += '<tr>' +
+      '<td style="font-size:13px;max-width:220px">' + lec + '</td>' +
+      '<td style="text-align:center;font-size:12px">' + qs.length + '</td>' +
+      '<td style="text-align:center;font-size:12px">' + ls.answered + '</td>' +
+      '<td style="text-align:center"><span class="lost-badge ' + (lost > 0 && ls.answered > 0 ? 'lost-bad' : 'lost-ok') + '">' + (lost && ls.answered ? lost : '\u2013') + '</span></td>' +
+      '<td style="min-width:110px">' +
+        (lp !== null
+          ? '<div class="bar-cell"><div class="bar-bg"><div class="bar-fill ' + barCls + '" style="width:' + lp + '%"></div></div><span class="pct-label">' + lp + '%</span></div>'
+          : '<span style="font-size:12px;color:var(--text3)">\u2013</span>') +
+      '</td></tr>';
   });
 
-  document.getElementById('sContent').innerHTML = `
-    <div class="stat-grid">
-      <div class="scard"><div class="n">${totalQ}</div><div class="l">Total questions</div></div>
-      <div class="scard"><div class="n">${totalAns}</div><div class="l">Attempted</div></div>
-      <div class="scard"><div class="n">${totalCor}</div><div class="l">Correct</div></div>
-      <div class="scard"><div class="n" style="color:${pct===null?'var(--text3)':pct>=70?'var(--green)':pct>=50?'#BA7517':'var(--red)'}">${pct !== null ? pct + '%' : '–'}</div><div class="l">Overall score</div></div>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;gap:12px;flex-wrap:wrap">
-      <p style="font-size:13px;color:var(--ink-dim);margin:0">Marks lost by lecture — target your revision on red/amber areas:</p>
-      <button
-        class="sort-btn ${statsSortOrder !== 'default' ? 'sort-btn-active' : ''}"
-        onclick="statsSortOrder='${nextSort[statsSortOrder]}'; renderStats('${blockId}')"
-        title="Cycle sort: lecture order → lowest % first → highest % first"
-      >${sortLabels[statsSortOrder]}</button>
-    </div>
-    <div style="overflow-x:auto">
-    <table class="ltable">
-      <thead><tr><th>Lecture</th><th>Total Qs</th><th>Attempted</th><th>Marks lost</th><th>Score</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table></div>`;
+  // --- Attempt history rows ---
+  let attemptRows = '';
+  [...blockAttempts].reverse().forEach(a => {
+    const pillCls = a.pct >= 70 ? 'bar-g' : a.pct >= 50 ? 'bar-a' : 'bar-r';
+    attemptRows += '<tr>' +
+      '<td>' + new Date(a.date).toLocaleDateString() + '</td>' +
+      '<td><span class="pill ' + pillCls + '">' + a.pct + '%</span></td>' +
+      '<td>' + a.correct + '/' + a.answered + '</td>' +
+      '<td>' + (a.isRandom ? 'Random' : 'Sequential') + '</td>' +
+      '</tr>';
+  });
+
+  document.getElementById('sContent').innerHTML =
+    // Time filters
+    '<div class="time-filters">' +
+      ['7d', '30d', 'all'].map(pv =>
+        '<button class="tf-btn' + (p === pv ? ' active' : '') + '" onclick="renderStats(\'' + blockId + '\',\'' + pv + '\')">' +
+        (pv === 'all' ? 'All time' : pv) + '</button>'
+      ).join('') +
+    '</div>' +
+
+    // Key stats row
+    '<div class="stat-grid">' +
+      '<div class="scard"><div class="n">' + (avgScore !== null ? avgScore + '%' : '\u2013') + '</div><div class="l">Avg Score</div></div>' +
+      '<div class="scard"><div class="n">' + (bestScore !== null ? bestScore + '%' : '\u2013') + '</div><div class="l">Best Score</div></div>' +
+      '<div class="scard"><div class="n">' + blockAttempts.length + '</div><div class="l">Attempts</div></div>' +
+      '<div class="scard"><div class="n" style="font-size:' + (weakest.length > 20 ? '0.7rem' : '0.85rem') + ';line-height:1.2">' + weakest + '</div><div class="l">Weakest Topic</div></div>' +
+    '</div>' +
+
+    // Charts (only if attempts exist)
+    (blockAttempts.length > 0
+      ? '<div class="chart-section"><h3>Score Trend</h3><canvas id="trendChart" height="120"></canvas></div>' +
+        '<div class="chart-section"><h3>Topic Accuracy</h3><canvas id="topicChart" height="' + Math.max(topicStats.length * 30, 120) + '"></canvas></div>'
+      : '<div class="chart-section" style="color:var(--ink-dim);font-size:14px;padding:1.25rem">Complete some quiz attempts to see charts here.</div>'
+    ) +
+
+    // Recommendations
+    '<div class="recs-panel"><h3>Recommendations</h3><ul>' +
+      recs.map(r => '<li>' + r + '</li>').join('') +
+    '</ul></div>' +
+
+    // Individual attempts table
+    (blockAttempts.length > 0
+      ? '<div class="chart-section"><h3>Individual Attempts</h3>' +
+        '<div style="overflow-x:auto"><table class="htable">' +
+        '<thead><tr><th>Date</th><th>Score</th><th>Correct</th><th>Mode</th></tr></thead>' +
+        '<tbody>' + attemptRows + '</tbody></table></div></div>'
+      : ''
+    ) +
+
+    // Lecture breakdown (all-time, unchanged)
+    '<div class="chart-section">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;gap:12px;flex-wrap:wrap">' +
+      '<div>' +
+        '<h3 style="margin:0 0 0.25rem">Lecture Breakdown</h3>' +
+        '<p style="font-size:13px;color:var(--ink-dim);margin:0">All-time \u2014 marks lost by lecture:</p>' +
+      '</div>' +
+      '<button class="sort-btn ' + (statsSortOrder !== 'default' ? 'sort-btn-active' : '') + '" ' +
+        'onclick="statsSortOrder=\'' + nextSort[statsSortOrder] + '\'; renderStats(\'' + blockId + '\')" ' +
+        'title="Cycle sort: lecture order \u2192 lowest % first \u2192 highest % first">' +
+        sortLabels[statsSortOrder] +
+      '</button>' +
+    '</div>' +
+    '<div style="overflow-x:auto"><table class="ltable">' +
+      '<thead><tr><th>Lecture</th><th>Total Qs</th><th>Attempted</th><th>Marks lost</th><th>Score</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+    '</table></div></div>';
+
+  // Render Chart.js charts
+  if (blockAttempts.length > 0) {
+    if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
+    if (topicChartInstance) { topicChartInstance.destroy(); topicChartInstance = null; }
+
+    trendChartInstance = new Chart(document.getElementById('trendChart'), {
+      type: 'line',
+      data: {
+        labels: blockAttempts.map(a => new Date(a.date).toLocaleDateString()),
+        datasets: [{
+          label: 'Score %',
+          data: blockAttempts.map(a => a.pct),
+          borderColor: '#6366f1',
+          backgroundColor: 'rgba(99,102,241,0.1)',
+          tension: 0.3,
+          fill: true,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { min: 0, max: 100, ticks: { callback: v => v + '%' } } },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y + '%' } } }
+      }
+    });
+
+    topicChartInstance = new Chart(document.getElementById('topicChart'), {
+      type: 'bar',
+      data: {
+        labels: topicStats.map(t => t.name),
+        datasets: [{
+          data: topicStats.map(t => t.pct),
+          backgroundColor: topicStats.map(t => t.pct >= 70 ? '#22c55e' : t.pct >= 50 ? '#f59e0b' : '#ef4444')
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        scales: { x: { min: 0, max: 100, ticks: { callback: v => v + '%' } } },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.x + '%' } } }
+      }
+    });
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
