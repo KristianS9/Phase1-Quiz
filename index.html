@@ -2545,7 +2545,7 @@ function startQuiz() {
     state.isAllRandom = true;
   } else {
     selected.forEach(lec => {
-      b.lectures[lec].forEach((q, idx) => pool.push({lecture: lec, qIdx: idx, q, blockName: b.name}));
+      b.lectures[lec].forEach((q, idx) => pool.push({lecture: lec, qIdx: idx, q: shuffleAnswers(q), blockName: b.name}));
     });
     if (mode === 'random') {
       const includeAI = document.getElementById('aiToggle') && document.getElementById('aiToggle').checked;
