@@ -19,7 +19,7 @@ function submitGate() {
     errEl.textContent = 'Please enter a valid email address';
     return;
   }
-  if (!email.toLowerCase().endsWith('@warwick.ac.uk')) {
+  if (!email.toLowerCase().endsWith('@warwick.ac.uk') && !email.toLowerCase().endsWith('@live.warwick.ac.uk')) {
     errEl.textContent = 'Please use your Warwick email address';
     return;
   }
