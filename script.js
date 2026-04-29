@@ -2,9 +2,11 @@
 // ═══════════════════════════════════════════════════════════════
 // VERSION & CHANGELOG
 // ═══════════════════════════════════════════════════════════════
-const QUIZ_VERSION = "v23.0";
+const QUIZ_VERSION = "v23.2";
 
 const CHANGELOG = [
+  { version:"v23.2", date:"29 Apr 2026", summary:"Random mode toggle reclassified — WMS-first selection",
+    changes:["Random selection now defaults to WMS questions only (official Warwick CTB Block/End-of-Session questions)","New 'Include user-generated questions' toggle adds Notion and Claude-generated questions to fill remaining slots","Toggle hidden for formative blocks — full pool used without splitting","Disclaimer added to modal: WMS questions are selected first"] },
   { version:"v23.0", date:"29 Apr 2026", summary:"Block 2 distractor quality pass — 106 questions rewritten",
     changes:["Rewrote distractors for all 106 flagged Block 2 questions across immunology, haematology, respiratory, cardiovascular, pharmacology, and statistics topics","22 short-answer questions received fully rewritten stems and full-sentence correct answers to eliminate length-bias giveaways","All 5 options per question now broadly equal in length (no option >1.7× average) — correct answer no longer identifiable by length alone","Answer positions redistributed across all 221 Block 2 questions to eliminate positional bias","Correct answers unchanged throughout — only distractors, stems, and answer positions updated"] },
   { version:"v22.0", date:"28 Apr 2026", summary:"Formative blocks f1–f4 added — Warwick practice MCQs for Blocks 1–4",
