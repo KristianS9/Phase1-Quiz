@@ -1,5 +1,58 @@
 
 // ═══════════════════════════════════════════════════════════════
+// EMAIL GATE
+// ═══════════════════════════════════════════════════════════════
+const GATE_WORKER_URL = 'https://still-feather-cf7f.kristian-s.workers.dev';
+
+(function() {
+  if (localStorage.getItem('quiz_email_verified')) {
+    document.getElementById('emailGate').style.display = 'none';
+  }
+})();
+
+function submitGate() {
+  const email = document.getElementById('gateEmail').value.trim();
+  const errEl = document.getElementById('gateError');
+  const btn   = document.getElementById('gateBtn');
+  errEl.textContent = '';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errEl.textContent = 'Please enter a valid email address';
+    return;
+  }
+  if (!email.toLowerCase().endsWith('@warwick.ac.uk')) {
+    errEl.textContent = 'Please use your Warwick email address';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Submitting\u2026';
+  fetch(GATE_WORKER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, userAgent: navigator.userAgent, timestamp: new Date().toISOString() })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      localStorage.setItem('quiz_email_verified', '1');
+      const gate = document.getElementById('emailGate');
+      gate.classList.add('fade-out');
+      setTimeout(() => { gate.style.display = 'none'; }, 500);
+    } else {
+      throw new Error('Server error');
+    }
+  })
+  .catch(() => {
+    errEl.textContent = 'Something went wrong. Please try again.';
+    btn.disabled = false;
+    btn.textContent = 'Access Quiz';
+  });
+}
+
+document.getElementById('gateEmail').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitGate();
+});
+
+// ═══════════════════════════════════════════════════════════════
 // VERSION & CHANGELOG
 // ═══════════════════════════════════════════════════════════════
 const QUIZ_VERSION = "v23.3";

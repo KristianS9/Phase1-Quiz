@@ -12,6 +12,18 @@
 </head>
 <body>
 
+<!-- ── EMAIL GATE ── -->
+<div id="emailGate">
+  <div class="gate-card">
+    <div class="gate-label">Access required</div>
+    <h2 class="gate-title">Enter your Warwick email to access the quiz</h2>
+    <input type="email" id="gateEmail" class="gate-input" placeholder="yourname@warwick.ac.uk" autocomplete="email">
+    <div class="gate-error" id="gateError"></div>
+    <p class="gate-consent">Your email will be stored to track access to this quiz. It will not be shared with third parties or used for marketing.</p>
+    <button class="gate-btn" id="gateBtn" onclick="submitGate()">Access Quiz</button>
+  </div>
+</div>
+
 <!-- ── WebGL shader backdrop ── -->
 <div id="shaderStage">
   <div id="shaderLayer"></div>
