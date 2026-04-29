@@ -1,0 +1,627 @@
+[
+  {
+    "line_idx": 1897,
+    "new_stem": "Which hormone raises serum calcium?",
+    "new_correct": "Parathyroid hormone (PTH)",
+    "new_distractors": [
+      "Calcitonin (thyrocalcitonin)",
+      "FGF23 (a phosphaturic hormone)",
+      "Glucagon (from alpha cells)",
+      "Insulin (from beta cells)"
+    ]
+  },
+  {
+    "line_idx": 1899,
+    "new_stem": "Primary hyperparathyroidism is most commonly caused by:",
+    "new_correct": "Solitary parathyroid adenoma",
+    "new_distractors": [
+      "Multiglandular hyperplasia",
+      "Parathyroid carcinoma",
+      "Ectopic PTH secretion",
+      "Vitamin D deficiency"
+    ]
+  },
+  {
+    "line_idx": 1903,
+    "new_distractors": [
+      "Reduced urinary calcium excretion leading to hypercalcaemia and suppression of PTH release from the parathyroid glands",
+      "Excess dietary phosphate intake causing autonomous parathyroid adenoma to develop independently of renal function",
+      "Loss of renal tubular calcium reabsorption causing hypocalcaemia and ectopic calcium deposition in soft tissues",
+      "Excess calcitonin secretion suppressing osteoclast activity and causing a reactive compensatory rise in PTH secretion"
+    ]
+  },
+  {
+    "line_idx": 1905,
+    "new_distractors": [
+      "Nuclear medicine bone scan",
+      "Quantitative CT (pQCT) scan",
+      "Serum alkaline phosphatase",
+      "Ultrasound densitometry"
+    ]
+  },
+  {
+    "line_idx": 1906,
+    "new_distractors": [
+      "Acidaemia decreases free ionised calcium by stimulating PTH release from the parathyroid glands, which promotes bone resorption and raises total serum calcium back towards the normal reference range",
+      "Alkalaemia increases free ionised calcium by stimulating 1α-hydroxylase activity in the kidney, enhancing calcitriol synthesis and intestinal calcium absorption to raise ionised calcium levels",
+      "Plasma pH changes affect only the phosphate buffer system; calcium binding to albumin is determined solely by albumin concentration and total calcium, independent of hydrogen ion concentration",
+      "Both acidaemia and alkalaemia decrease free ionised calcium by stimulating PTH secretion, which redistributes calcium from bone into the extracellular fluid and restores ionised calcium to normal"
+    ]
+  },
+  {
+    "line_idx": 1907,
+    "new_distractors": [
+      "First activation by UV light in skin converts 7-dehydrocholesterol to cholecalciferol; second activation occurs in the small intestine where cholecalciferol is hydroxylated to calcitriol by enterocytes",
+      "First hydroxylation occurs in the kidney producing 1,25-dihydroxycholecalciferol; second hydroxylation occurs in the liver producing 25-hydroxycholecalciferol, which is the physiologically active form",
+      "Vitamin D undergoes a single activation step in the liver where 7-dehydrocholesterol is hydroxylated directly to 1,25-dihydroxycholecalciferol (calcitriol) by 25-hydroxylase in hepatocytes",
+      "First activation involves PTH stimulating 1α-hydroxylase in the proximal tubule; second activation requires FGF23 in the distal nephron to produce the final active form of vitamin D"
+    ]
+  },
+  {
+    "line_idx": 1910,
+    "new_stem": "What is the basic structural unit of compact bone?",
+    "new_correct": "Osteon (Haversian system)",
+    "new_distractors": [
+      "Trabecula (cancellous unit)",
+      "Lacuna (osteocyte housing)",
+      "Chondrocyte (cartilage unit)",
+      "Canaliculus (nutrient channel)"
+    ]
+  },
+  {
+    "line_idx": 1913,
+    "new_distractors": [
+      "Intramembranous ossification",
+      "RANKL-mediated bone resorption",
+      "Direct mineralisation of fibrin",
+      "Periosteal appositional growth"
+    ]
+  },
+  {
+    "line_idx": 1915,
+    "new_distractors": [
+      "Bone forms through a hyaline cartilage template that is gradually vascularised and replaced by mineralised matrix laid down by osteoblasts",
+      "Mesenchymal stem cells first differentiate into chondrocytes before converting to osteoblasts via a transitional progenitor cell stage",
+      "It only occurs during endochondral repair at fracture sites, driven by BMP signalling to recruit periosteal progenitor cells",
+      "Long bones form through this process as chondrocytes hypertrophy, their surrounding matrix calcifies, and osteoblasts invade to deposit bone"
+    ]
+  },
+  {
+    "line_idx": 1916,
+    "new_distractors": [
+      "Dense cortical bone with Haversian canals and osteonal remodelling activity at the metaphyseal surface",
+      "Fibrocartilage with type I collagen, similar in composition to the intervertebral disc and the meniscus of the knee",
+      "Cancellous trabecular bone with haematopoietic marrow and active osteoblast zones in the secondary spongiosa",
+      "Fibrous periosteum with osteoprogenitor cells capable of intramembranous bone formation on the cortical surface"
+    ]
+  },
+  {
+    "line_idx": 1917,
+    "new_stem": "Which growth factor is primarily responsible for stimulating osteoblast differentiation during fracture healing?",
+    "new_correct": "TGF-beta and BMPs (bone morphogenetic proteins)",
+    "new_distractors": [
+      "VEGF (vascular endothelial growth factor)",
+      "PDGF (platelet-derived growth factor)",
+      "RANKL (receptor activator of NF-\u03baB ligand)",
+      "IL-1 and TNF-alpha (pro-inflammatory)"
+    ]
+  },
+  {
+    "line_idx": 1918,
+    "new_distractors": [
+      "Vitamin D deficiency causing impaired bone mineralisation and characteristic widening of growth plates",
+      "FGFR3 gain-of-function mutations inhibiting chondrocyte proliferation in the growth plate causing achondroplasia",
+      "Impaired osteoclast function resulting in osteopetrosis, increased bone density, and pathological fractures",
+      "Loss of intestinal calcium and phosphate absorption leading to rickets and secondary hyperparathyroidism"
+    ]
+  },
+  {
+    "line_idx": 1920,
+    "new_distractors": [
+      "Intramembranous ossification involves the development of a hyaline cartilage template from condensed mesenchyme; endochondral ossification involves direct differentiation of mesenchymal cells into osteoblasts without cartilage",
+      "Endochondral ossification forms the flat bones of the skull and mandible directly from a mesenchymal membrane; intramembranous ossification forms long bones via sequential cartilage resorption and bone deposition",
+      "Both processes use identical cellular mechanisms but differ in location: intramembranous occurs exclusively in the axial skeleton while endochondral occurs exclusively in the appendicular skeleton",
+      "Endochondral ossification relies solely on VEGF-mediated vascularisation as the driver of bone formation, whereas intramembranous ossification is entirely avascular and driven by local mesenchymal condensation only"
+    ]
+  },
+  {
+    "line_idx": 1929,
+    "new_distractors": [
+      "Dense sclerotic vertebral end-plates with bone-within-bone appearance and horizontal sclerotic bands at the metaphyses",
+      "Generalised osteopenia with cortical thinning, reduced trabecular density, and insufficiency fractures in weight-bearing bones",
+      "Pseudofractures (Looser's zones) at the medial femoral neck and pubic rami with surrounding periosteal reaction in adults",
+      "Abnormal bone sclerosis with expansion of the marrow cavity and Erlenmeyer flask deformity at the distal femora"
+    ]
+  },
+  {
+    "line_idx": 1934,
+    "new_stem": "Which fibre type provides elasticity to skin and lungs?",
+    "new_correct": "Elastic fibres (elastin)",
+    "new_distractors": [
+      "Type I collagen fibres",
+      "Reticular fibres (type III)",
+      "Fibrillin (scaffold protein)",
+      "Type IV collagen fibres"
+    ]
+  },
+  {
+    "line_idx": 1935,
+    "new_stem": "A defect in fibrillin causes which connective tissue disorder?",
+    "new_correct": "Marfan syndrome (FBN1 defect)",
+    "new_distractors": [
+      "Ehlers-Danlos syndrome (EDS)",
+      "Osteogenesis imperfecta",
+      "Pseudoxanthoma elasticum",
+      "Cutis laxa (elastin defect)"
+    ]
+  },
+  {
+    "line_idx": 1936,
+    "new_stem": "Vitamin C deficiency causing impaired collagen cross-linking leads to which condition?",
+    "new_correct": "Scurvy (vitamin C deficiency)",
+    "new_distractors": [
+      "Rickets (vitamin D deficiency)",
+      "Osteogenesis imperfecta (OI)",
+      "Ehlers-Danlos syndrome (EDS)",
+      "Marfan syndrome (FBN1 mutation)"
+    ]
+  },
+  {
+    "line_idx": 1938,
+    "new_distractors": [
+      "Defective fibrillin-1 causing reduced elastic fibre scaffolding and increased TGF-beta signalling in aortic and skeletal tissues",
+      "Impaired lysyl oxidase activity leading to defective cross-linking of type IV collagen in glomerular and alveolar basement membranes",
+      "Abnormal type IV collagen synthesis causing defective glomerular basement membrane filtration and progressive hereditary nephritis",
+      "Elastin gene mutations reducing connective tissue elastic recoil and causing generalised joint hypermobility and skin laxity"
+    ]
+  },
+  {
+    "line_idx": 1939,
+    "new_distractors": [
+      "Type I collagen, elastin, fibronectin, and vitronectin forming the interstitial extracellular matrix scaffold",
+      "Type III collagen, fibronectin, heparan sulphate, and vitronectin forming loose reticular support networks",
+      "Keratin intermediate filaments, desmosomes, E-cadherin, and integrin forming epithelial junction complexes",
+      "Actin, myosin, titin, and troponin forming the contractile units within smooth muscle cells"
+    ]
+  },
+  {
+    "line_idx": 1940,
+    "new_distractors": [
+      "Prolyl hydroxylase",
+      "Transglutaminase",
+      "Collagenase (MMP-1)",
+      "Gelatinase (MMP-9)"
+    ]
+  },
+  {
+    "line_idx": 1945,
+    "new_stem": "Anti-AChR antibodies cause which neuromuscular disorder?",
+    "new_correct": "Myasthenia gravis (MG)",
+    "new_distractors": [
+      "Lambert-Eaton syndrome (LEMS)",
+      "Duchenne muscular dystrophy",
+      "Amyotrophic lateral sclerosis",
+      "Multiple sclerosis (MS)"
+    ]
+  },
+  {
+    "line_idx": 1946,
+    "new_stem": "Where is calcium primarily stored in skeletal muscle cells?",
+    "new_correct": "Sarcoplasmic reticulum",
+    "new_distractors": [
+      "Mitochondrial matrix space",
+      "T-tubule membrane network",
+      "Golgi apparatus lumen",
+      "Cytoplasmic free pool"
+    ]
+  },
+  {
+    "line_idx": 1949,
+    "new_stem": "Which protein in the thin filament directly binds calcium to initiate muscle contraction?",
+    "new_correct": "Troponin C (TnC calcium sensor)",
+    "new_distractors": [
+      "Tropomyosin (blocks myosin binding)",
+      "Troponin I (inhibitory subunit)",
+      "Troponin T (tropomyosin binding)",
+      "Actin (thin filament backbone)"
+    ]
+  },
+  {
+    "line_idx": 1950,
+    "new_distractors": [
+      "LEMS involves autoantibodies against postsynaptic nicotinic receptors, producing fatigable weakness indistinguishable clinically from myasthenia gravis",
+      "LEMS causes purely motor nerve terminal dysfunction with preserved sensory function, identical in distribution to demyelinating peripheral neuropathy",
+      "LEMS does not involve autoantibodies; it results from paraneoplastic degeneration of anterior horn cells in the spinal cord causing proximal weakness",
+      "LEMS responds well to acetylcholinesterase inhibitors such as pyridostigmine, improving neuromuscular transmission by accumulating acetylcholine"
+    ]
+  },
+  {
+    "line_idx": 1954,
+    "new_distractors": [
+      "Myosin heavy chain (ATP hydrolysis drives the power stroke), myosin light chain (modulates heavy chain activity), and titin (elastic element connecting the Z-disc to the thick filament)",
+      "Actin (forms the backbone of the thin filament), titin (giant elastic protein spanning half the sarcomere), and nebulin (template for thin filament length anchoring actin to the Z-disc)",
+      "Troponin C (binds calcium), SERCA pump (sequesters calcium back into the sarcoplasmic reticulum), and calsequestrin (calcium storage protein within the SR terminal cisternae)",
+      "Dystrophin (links the actin cytoskeleton to the extracellular matrix), desmin (intermediate filament linking Z-discs), and integrin (transmembrane receptor connecting the sarcomere to the basement membrane)"
+    ]
+  },
+  {
+    "line_idx": 1958,
+    "new_stem": "Pannus formation, joint erosion, and chronic synovitis are features of which arthritis?",
+    "new_correct": "Rheumatoid arthritis (RA)",
+    "new_distractors": [
+      "Osteoarthritis (primary OA)",
+      "Gout (urate crystal arthritis)",
+      "Pseudogout (CPPD arthritis)",
+      "Septic arthritis (infection)"
+    ]
+  },
+  {
+    "line_idx": 1959,
+    "new_stem": "Morning stiffness lasting over 60 minutes and improving with activity is characteristic of which disease?",
+    "new_correct": "Rheumatoid arthritis (RA)",
+    "new_distractors": [
+      "Osteoarthritis (primary OA)",
+      "Gout (urate crystal disease)",
+      "Pseudogout (CPPD deposition)",
+      "Septic arthritis (bacterial)"
+    ]
+  },
+  {
+    "line_idx": 1963,
+    "new_distractors": [
+      "Chondrocytes divide too slowly to replace damaged tissue; cartilage is avascular but perichondrial cells can rapidly migrate into small defects and repair them via endochondral mechanisms",
+      "Cartilage contains abundant protease inhibitors that block MMP activity, preventing both matrix degradation and the subsequent remodelling necessary for effective tissue repair",
+      "Cartilage lacks mesenchymal stem cells entirely; the only source of repair cells is the synovial membrane, which cannot access the deep zones of articular hyaline cartilage",
+      "Cartilage actively secretes anti-inflammatory cytokines including IL-10 and TGF-beta that suppress the inflammatory phase needed to recruit repair cells and growth factors to the defect"
+    ]
+  },
+  {
+    "line_idx": 1967,
+    "new_stem": "Which autoantibody is most specific for rheumatoid arthritis?",
+    "new_correct": "Anti-CCP (citrullinated peptide)",
+    "new_distractors": [
+      "Rheumatoid factor (RF)",
+      "Antinuclear antibody (ANA)",
+      "Anti-dsDNA (SLE-specific)",
+      "Anti-Smith antibody (SLE)"
+    ]
+  },
+  {
+    "line_idx": 1968,
+    "new_stem": "Rheumatoid factor (RF) is an antibody directed against:",
+    "new_correct": "IgG Fc region (self-antibody)",
+    "new_distractors": [
+      "Citrullinated protein epitopes",
+      "Type II collagen in cartilage",
+      "Double-stranded DNA (dsDNA)",
+      "TNF-alpha (pro-inflammatory)"
+    ]
+  },
+  {
+    "line_idx": 1969,
+    "new_stem": "Synoviocytes in rheumatoid arthritis degrade cartilage primarily by secreting:",
+    "new_correct": "Matrix metalloproteinases (MMPs)",
+    "new_distractors": [
+      "Reactive oxygen species (ROS)",
+      "Pro-inflammatory cytokines (TNF-\u03b1)",
+      "RANKL (receptor activator NF-\u03baB)",
+      "Complement proteins (C3, C5b-9)"
+    ]
+  },
+  {
+    "line_idx": 1972,
+    "new_distractors": [
+      "RANKL expression is suppressed in RA synovium; bone erosion occurs instead through direct MMP-mediated cartilage degradation that is independent of osteoclast activity",
+      "OPG binds RANK on osteoclast precursors to promote bone resorption directly; RANKL acts as a decoy receptor that prevents excess bone erosion by competing with OPG signalling",
+      "RANKL promotes osteoblast differentiation and new bone formation in RA; OPG inhibits this process, explaining the periarticular osteopenia seen in early disease",
+      "RANKL reduces MMP secretion by fibroblast-like synoviocytes, thereby protecting articular cartilage from enzymatic degradation via a pathway independent of cytokine signalling"
+    ]
+  },
+  {
+    "line_idx": 1973,
+    "new_distractors": [
+      "IL-6 receptor antagonists (e.g. tocilizumab, sarilumab)",
+      "B-cell depleting agents (e.g. rituximab, CD20 antibody)",
+      "JAK inhibitors as first-line biologics (tofacitinib)",
+      "T-cell co-stimulation blockers (e.g. abatacept, CTLA4-Ig)"
+    ]
+  },
+  {
+    "line_idx": 1976,
+    "new_stem": "Which organism most commonly causes osteomyelitis across all age groups?",
+    "new_correct": "Staphylococcus aureus",
+    "new_distractors": [
+      "Streptococcus pneumoniae",
+      "Pseudomonas aeruginosa",
+      "Salmonella species (spp.)",
+      "Neisseria gonorrhoeae"
+    ]
+  },
+  {
+    "line_idx": 1977,
+    "new_distractors": [
+      "New periosteal bone forming around the infected site (involucrum)",
+      "Draining sinus tract that allows pus to escape to the skin surface",
+      "Subperiosteal abscess lifting the periosteum from the bone surface",
+      "Calcified cartilage remnant within bone after endochondral repair"
+    ]
+  },
+  {
+    "line_idx": 1978,
+    "new_stem": "What is the gold standard investigation for diagnosing septic arthritis?",
+    "new_correct": "Joint aspiration and synovial fluid culture",
+    "new_distractors": [
+      "Serum CRP and erythrocyte sedimentation rate",
+      "MRI of the affected joint with contrast",
+      "Plain X-ray of the affected joint",
+      "Blood cultures and serum white cell count"
+    ]
+  },
+  {
+    "line_idx": 1979,
+    "new_distractors": [
+      "Oral flucloxacillin and rest with limb elevation",
+      "High-dose NSAIDs and corticosteroid injection",
+      "Urgent joint replacement to prevent cartilage damage",
+      "MRI imaging followed by bed rest and observation"
+    ]
+  },
+  {
+    "line_idx": 1982,
+    "new_stem": "Which imaging modality is most sensitive for detecting early osteomyelitis before X-ray changes appear?",
+    "new_correct": "MRI (gadolinium-enhanced)",
+    "new_distractors": [
+      "Plain X-ray (radiograph)",
+      "Tc-99m nuclear bone scan",
+      "CT scan of affected bone",
+      "Ultrasound of joint space"
+    ]
+  },
+  {
+    "line_idx": 1992,
+    "new_distractors": [
+      "Apocrine secretion of pre-formed melanin granules into the sebaceous duct lumen",
+      "Direct cell-to-cell membrane fusion between melanocytes and surrounding keratinocytes",
+      "Exocytosis of melanin into the extracellular space for passive uptake by adjacent keratinocytes",
+      "Gap junction channels connecting melanocytes directly to basal keratinocytes in the dermis"
+    ]
+  },
+  {
+    "line_idx": 1994,
+    "new_distractors": [
+      "Thinned atrophic epidermis with loss of rete ridges and flattening of the dermoepidermal junction",
+      "Suprabasal acantholysis with tombstone cells and intraepidermal blistering from desmoglein-3 autoantibody destruction",
+      "Subepidermal blister formation with eosinophil-rich infiltrate due to IgG deposition at the dermoepidermal junction",
+      "Lichenoid interface dermatitis with dense lymphocytic infiltrate and basal cell vacuolation typical of lichen planus"
+    ]
+  },
+  {
+    "line_idx": 2002,
+    "new_distractors": [
+      "Excess type I collagen deposited within the original wound margins",
+      "Eosinophil-rich inflammatory infiltrate in the dermis",
+      "Reduced fibroblast migration and impaired TGF-beta activity",
+      "Autoimmune keratinocyte attack following wound trauma"
+    ]
+  },
+  {
+    "line_idx": 2005,
+    "new_distractors": [
+      "It inhibits platelet aggregation and reduces fibrin clot formation, impairing haemostasis and delaying the onset of wound inflammation",
+      "It depletes serum clotting factors II, VII, IX and X through competition with vitamin K in carboxylation of glutamate residues",
+      "It reduces macrophage phagocytic activity by inhibiting NADPH oxidase, preventing the oxidative burst needed to clear bacteria",
+      "It depletes tissue zinc stores required for epithelial cell migration and metalloproteinase activity during the proliferative phase"
+    ]
+  },
+  {
+    "line_idx": 2006,
+    "new_distractors": [
+      "Hypertrophic scars extend beyond the original wound margins and never regress; keloids remain confined within the boundary and resolve with time",
+      "Keloid scars are found exclusively on the face and neck, whereas hypertrophic scars predominantly affect the trunk and presternal areas",
+      "Both are histologically identical, showing the same disorganised type I collagen deposition, mast cell infiltration, and myofibroblast activation",
+      "Hypertrophic scars result from wound infection impairing epithelialisation; keloids are an allergic response to wound closure materials"
+    ]
+  },
+  {
+    "line_idx": 2007,
+    "new_stem": "Which growth factor is the most potent driver of angiogenesis during wound healing?",
+    "new_correct": "VEGF (vascular endothelial growth factor)",
+    "new_distractors": [
+      "TGF-beta (transforming growth factor beta)",
+      "PDGF (platelet-derived growth factor)",
+      "EGF (epidermal growth factor 1)",
+      "FGF-2 (basic fibroblast growth factor)"
+    ]
+  },
+  {
+    "line_idx": 2008,
+    "new_distractors": [
+      "Inflammation (cytokine release and neutrophil migration) \u2192 haemostasis (fibrin clot and platelet activation) \u2192 proliferation (keratinocyte migration) \u2192 remodelling (matrix maturation)",
+      "Proliferation (fibroblast migration) \u2192 haemostasis (platelet plug) \u2192 inflammation (macrophage debridement) \u2192 remodelling (collagen crosslinking)",
+      "Haemostasis (vasoconstriction and clot) \u2192 infection (neutrophil margination) \u2192 scarring (fibroblast collagen) \u2192 resolution (scar regression)",
+      "Haemostasis (thrombus formation) \u2192 proliferation (granulation tissue) \u2192 inflammation (macrophage arrival) \u2192 remodelling (type I collagen replaces type III)"
+    ]
+  },
+  {
+    "line_idx": 2009,
+    "new_distractors": [
+      "Hyperglycaemia promotes excessive platelet aggregation and microvascular thrombosis at wound sites, obstructing blood flow and preventing oxygen delivery to healing tissue, causing localised ischaemic necrosis",
+      "Insulin deficiency directly inhibits neutrophil production from the bone marrow, leaving wound sites unable to mount an adequate acute inflammatory response so secondary bacterial colonisation becomes universal",
+      "Diabetes causes uncontrolled fibroblast activation and excess TGF-beta production, leading to pathological over-production of collagen at wound sites and development of hypertrophic scars in all diabetic wounds",
+      "Hyperglycaemia specifically blocks keratinocyte stem cell proliferation in the stratum basale through glycation of EGF receptors, preventing re-epithelialisation without affecting any other phase of healing"
+    ]
+  },
+  {
+    "line_idx": 2016,
+    "new_distractors": [
+      "Pseudomonas aeruginosa and Klebsiella pneumoniae (Gram-negative organisms)",
+      "Candida albicans and Trichophyton (superficial fungal pathogens)",
+      "MRSA and Enterococcus faecalis (healthcare-associated organisms)",
+      "Herpes simplex virus type 1 and varicella-zoster virus"
+    ]
+  },
+  {
+    "line_idx": 2017,
+    "new_stem": "A patient develops a rapidly spreading erythema after minor trauma to the leg with a well-defined raised border and systemic fever. The most likely diagnosis is:",
+    "new_correct": "Erysipelas (superficial dermis)",
+    "new_distractors": [
+      "Cellulitis (deep dermis/subcut)",
+      "Necrotising fasciitis (deep)",
+      "Impetigo (non-bullous form)",
+      "Folliculitis (Staph. aureus)"
+    ]
+  },
+  {
+    "line_idx": 2035,
+    "new_distractors": [
+      "The condition affects only males, as it follows X-linked recessive inheritance transmitted through carrier females",
+      "One copy of the mutant allele alone is sufficient to cause the disease phenotype due to haploinsufficiency",
+      "The condition always skips exactly one generation between affected individuals in a pedigree",
+      "Penetrance is always incomplete, causing variable disease expression between individuals carrying the same mutation"
+    ]
+  },
+  {
+    "line_idx": 2041,
+    "new_distractors": [
+      "Conduct a new large-scale randomised controlled trial with prospective allocation of participants to treatment and control groups",
+      "Provide expert consensus guidelines based on panel clinical experience and structured committee discussion processes",
+      "Conduct meta-analysis exclusively on unpublished grey literature and conference abstracts unavailable through standard databases",
+      "Replace randomised controlled trials when they are not feasible due to ethical or logistical constraints in a given clinical area"
+    ]
+  },
+  {
+    "line_idx": 2042,
+    "new_distractors": [
+      "Replace individual primary studies with a single definitive pooled answer that supersedes and renders previous evidence obsolete",
+      "Remove all forms of bias from individual studies, including selection, performance, and detection biases that affect effect estimates",
+      "Guarantee the generalisability of findings to all patient populations, clinical settings, and healthcare systems globally",
+      "Eliminate the need for future randomised controlled trials by providing sufficiently precise and reliable pooled effect estimates"
+    ]
+  },
+  {
+    "line_idx": 2044,
+    "new_distractors": [
+      "A systematic tendency for high-impact journals to preferentially publish studies from academic centres, overestimating treatment effects",
+      "The bias introduced by selecting only randomised controlled trials while excluding observational and cohort studies from synthesis",
+      "Between-study heterogeneity in populations, interventions, and outcomes that distorts the pooled estimate in a meta-analysis",
+      "The overrepresentation of commercially funded studies comparing an intervention to placebo rather than to an active comparator"
+    ]
+  },
+  {
+    "line_idx": 2046,
+    "new_distractors": [
+      "Having a very large sample size making results too statistically precise and the confidence interval implausibly narrow",
+      "Being published in a high-impact journal with stringent peer review and rigorous methodological standards",
+      "Having a relative risk below 1.0, indicating that the intervention produces no harmful effect on the primary outcome",
+      "Including too many primary and secondary outcomes, making adjustment for multiple comparisons statistically necessary"
+    ]
+  },
+  {
+    "line_idx": 2050,
+    "new_distractors": [
+      "Compliance involves a shared decision-making process in which clinician and patient negotiate treatment preferences and agree on goals",
+      "Concordance means the patient follows clinician instructions without question, implying a paternalistic model of medical decision-making",
+      "Compliance requires a therapeutic alliance in which both parties invest equal effort in achieving agreed health-related goals",
+      "Concordance exclusively concerns adherence to prescribed medication regimens and does not extend to lifestyle modifications"
+    ]
+  },
+  {
+    "line_idx": 2053,
+    "new_distractors": [
+      "A specific disease entity requiring a definitive diagnostic test and pharmacological treatment to prevent progression to disability",
+      "An inevitable and irreversible consequence of normal biological ageing that cannot be modified by any exercise or nutritional intervention",
+      "A diagnosis made exclusively on the basis of chronological age, defined as over 75 years old with two or more comorbidities",
+      "A psychiatric syndrome predominantly associated with dementia and depression, characterised by cognitive decline and functional impairment"
+    ]
+  },
+  {
+    "line_idx": 2054,
+    "new_distractors": [
+      "As life expectancy continues to increase, the period of disability and morbidity before death inevitably lengthens in direct proportion",
+      "Intensive medical treatment of older people should be rationed based on chronological age and remaining life expectancy estimates",
+      "All chronic diseases inevitably worsen in severity with increasing age regardless of any preventive or therapeutic interventions",
+      "Multimorbidity and frailty are unavoidable features of ageing that cannot be prevented or significantly modified by public health"
+    ]
+  },
+  {
+    "line_idx": 2057,
+    "new_distractors": [
+      "Impaired drug absorption from the gastrointestinal tract due to reduced intestinal motility and surface area",
+      "Altered drug distribution due to changes in body composition, increasing the volume of distribution for lipophilic drugs",
+      "Increased first-pass hepatic metabolism due to enzyme induction, reducing oral bioavailability of extensively metabolised drugs",
+      "Enhanced protein binding due to increased serum albumin levels, reducing free drug concentration and pharmacological effect"
+    ]
+  },
+  {
+    "line_idx": 2058,
+    "new_distractors": [
+      "Older patients taking medications incorrectly due to cognitive impairment, complex regimens, and poor health literacy leading to overdose",
+      "Older adults exhibiting greater sensitivity to placebo effects and nocebo responses, amplifying adverse effects of all medications",
+      "Reduced gastrointestinal absorption of multiple drugs due to achlorhydria and decreased gut motility, reducing peak plasma concentrations",
+      "Increased plasma protein binding due to elevated acute phase proteins increasing free drug fractions and pharmacodynamic effects"
+    ]
+  },
+  {
+    "line_idx": 2059,
+    "new_distractors": [
+      "Statins and ezetimibe (lipid-lowering agents)",
+      "Proton pump inhibitors and H2 receptor blockers",
+      "Bisphosphonates (alendronate, risedronate)",
+      "Metformin and SGLT-2 inhibitors for diabetes"
+    ]
+  },
+  {
+    "line_idx": 2061,
+    "new_distractors": [
+      "Reduced hepatic cytochrome P450 enzyme activity slowing benzodiazepine metabolism and prolonging drug half-life",
+      "Reduced serum albumin in older adults decreasing protein binding and increasing the free drug concentration",
+      "Reduced renal excretion of benzodiazepine metabolites prolonging their half-life and accumulating active compounds",
+      "Increased gastrointestinal absorption due to reduced first-pass metabolism enhancing the oral bioavailability"
+    ]
+  },
+  {
+    "line_idx": 2062,
+    "new_distractors": [
+      "Prescribe warfarin at standard doses without adjustment, monitoring INR monthly to maintain the therapeutic range of 2.0\u20133.0",
+      "Use all available DOACs at standard doses regardless of renal function, as dose reduction increases the risk of stroke",
+      "Avoid all anticoagulation in elderly patients aged over 75 given the high falls risk and consequent intracranial haemorrhage risk",
+      "Use aspirin 75mg daily as an alternative to anticoagulation in atrial fibrillation when renal function is impaired"
+    ]
+  },
+  {
+    "line_idx": 2065,
+    "new_distractors": [
+      "Disability is caused entirely by the person's medical condition and should be treated through clinical intervention to restore function",
+      "Disabled people require constant supervision and cannot live independently in the community without residential care provision",
+      "Disability is always visible and physically apparent; invisible or hidden impairments do not constitute disability under this model",
+      "Medical treatment eliminates disability by restoring physical function to normal, removing the need for environmental adjustments"
+    ]
+  },
+  {
+    "line_idx": 2069,
+    "new_distractors": [
+      "Only when the carer is in paid employment and contributes a minimum number of unpaid care hours per week",
+      "Only for carers of adults with dementia or other specified cognitive impairments under NHS continuing healthcare criteria",
+      "Only when formally requested by the patient being cared for and countersigned by their registered GP",
+      "Only when the carer has no other social support network and faces immediate risk of breakdown in the caring role"
+    ]
+  },
+  {
+    "line_idx": 2072,
+    "new_distractors": [
+      "A temperature above 38\u00b0C with a positive blood culture and clinical features of systemic infection",
+      "A systemic inflammatory response to infection defined by the presence of at least two SIRS criteria",
+      "Bacteraemia accompanied by persistent hypotension unresponsive to fluid resuscitation and evidence of organ failure",
+      "Any infection severe enough to require admission and initiation of intravenous antibiotic therapy"
+    ]
+  },
+  {
+    "line_idx": 2073,
+    "new_distractors": [
+      "Increased systemic vascular resistance due to intense sympathetic vasoconstriction reducing peripheral blood flow",
+      "Isolated myocardial failure with preserved systemic vascular resistance causing cardiogenic distributive shock",
+      "Pure intravascular volume depletion causing pre-renal hypovolaemic shock without changes in vascular tone",
+      "Obstructed venous return from massive pulmonary embolism causing obstructive shock and acute right heart failure"
+    ]
+  }
+]
