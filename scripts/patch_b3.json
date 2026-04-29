@@ -1,0 +1,586 @@
+[
+  {
+    "line_idx": 1708,
+    "new_stem": "At which neuronal site are action potentials generated, due to the high density of voltage-gated Na\u207a channels and integration of all synaptic inputs?",
+    "new_correct": "The axon hillock (initial segment), which has the highest density of voltage-gated Na\u207a channels and integrates synaptic inputs to generate action potentials",
+    "new_distractors": [
+      "The soma, which sums all inhibitory and excitatory inputs through spatial and temporal summation of dendritic potentials",
+      "The dendrites, where ligand-gated channels receive neurotransmitters and generate graded post-synaptic potentials",
+      "The axon terminal, where voltage-gated Ca\u00b2\u207a influx triggers synaptic vesicle fusion and neurotransmitter release",
+      "The synaptic cleft, where neurotransmitters diffuse across the gap and bind post-synaptic receptor proteins"
+    ]
+  },
+  {
+    "line_idx": 1725,
+    "new_stem": "Which ionotropic glutamate receptor mediates fast excitatory post-synaptic potentials (EPSPs) and is the primary receptor activated during normal basal synaptic transmission?",
+    "new_correct": "The AMPA receptor, a ligand-gated Na\u207a/K\u207a channel that opens rapidly upon glutamate binding to produce fast EPSPs at excitatory synapses",
+    "new_distractors": [
+      "The NMDA receptor, which requires both glutamate binding and membrane depolarisation to relieve its Mg\u00b2\u207a block before conducting",
+      "The GABA-A receptor, a ligand-gated Cl\u207b channel that mediates fast inhibitory post-synaptic potentials throughout the CNS",
+      "The metabotropic glutamate receptor (mGluR), which activates G proteins to modulate second messenger cascades and synaptic plasticity",
+      "The muscarinic ACh receptor, a GPCR that modulates neuronal excitability indirectly through intracellular second messenger systems"
+    ]
+  },
+  {
+    "line_idx": 1727,
+    "new_distractors": [
+      "Amino acid neurotransmitter; synthesised in the soma from dietary precursors and transported along the axon to pre-synaptic terminals inside vesicles",
+      "Peptide neurotransmitter; synthesised on rough ER ribosomes in the soma, packaged in large dense-core vesicles, and transported to pre-synaptic terminals",
+      "Purine neurotransmitter; released as ATP co-transmitter from synaptic vesicles and degraded extracellularly by NTPDases to adenosine in the cleft",
+      "Gaseous neurotransmitter; produced on demand by nitric oxide synthase from arginine without vesicular storage, diffusing retrogradely across the synapse"
+    ]
+  },
+  {
+    "line_idx": 1729,
+    "new_distractors": [
+      "Excitatory post-synaptic potential (EPSP) \u2014 K\u207a efflux depolarises the membrane toward firing threshold",
+      "A direct action potential, since K\u207a channel opening reaches the threshold for voltage-gated Na\u207a channel activation",
+      "Depolarising block, as sustained K\u207a efflux inactivates fast Na\u207a channels and prevents further firing",
+      "Post-tetanic potentiation at the pre-synaptic terminal, increasing subsequent neurotransmitter release"
+    ]
+  },
+  {
+    "line_idx": 1735,
+    "new_stem": "Which neurodegenerative disease is characterised by extracellular \u03b2-amyloid senile plaques and intracellular neurofibrillary tau tangles leading to progressive cognitive decline?",
+    "new_correct": "Alzheimer\u2019s disease, caused by the amyloid cascade where APP is cleaved by \u03b2- and \u03b3-secretase to form A\u03b242 plaques and hyperphosphorylated tau tangles",
+    "new_distractors": [
+      "Parkinson\u2019s disease, characterised by Lewy bodies containing aggregated \u03b1-synuclein in dopaminergic neurons of the substantia nigra pars compacta",
+      "Huntington\u2019s disease, caused by a CAG repeat expansion in the HTT gene leading to striatal and cortical neuronal degeneration",
+      "Multiple sclerosis, an autoimmune demyelinating disease in which T cells attack oligodendrocytes causing CNS white matter plaques",
+      "ALS (motor neuron disease), caused by TDP-43 and SOD1 aggregation leading to progressive upper and lower motor neuron degeneration"
+    ]
+  },
+  {
+    "line_idx": 1736,
+    "new_stem": "In Parkinson\u2019s disease, which misfolded protein accumulates within the eosinophilic intraneuronal inclusions known as Lewy bodies?",
+    "new_correct": "Alpha-synuclein, a presynaptic protein that misfolds and aggregates with ubiquitin to form Lewy bodies inside dopaminergic neurons of the substantia nigra",
+    "new_distractors": [
+      "Tau protein, which forms intracellular neurofibrillary tangles due to hyperphosphorylation of microtubule-associated proteins in Alzheimer\u2019s",
+      "\u03b2-amyloid, which aggregates extracellularly as senile plaques via sequential amyloid precursor protein cleavage by secretase enzymes",
+      "TDP-43, a nuclear RNA-binding protein that mislocalises and forms cytoplasmic aggregates in ALS and frontotemporal dementia",
+      "Huntingtin protein, which forms intranuclear inclusions in striatal neurons due to expanded polyglutamine repeat sequences"
+    ]
+  },
+  {
+    "line_idx": 1738,
+    "new_distractors": [
+      "Demyelination prevents saltatory conduction because oligodendrocytes fail to remyelinate, leaving nodes of Ranvier exposed and blocking axonal signal propagation",
+      "Microglial phagocytosis removes myelin debris and releases pro-inflammatory cytokines that inhibit axonal sprouting and synapse formation in the injured CNS",
+      "Apoptosis of oligodendrocytes eliminates myelin from CNS axons, leaving demyelinated axons vulnerable to excitotoxic calcium influx and Wallerian degeneration",
+      "Schwann cells cannot enter the CNS environment because the blood-brain barrier prevents peripheral repair cells from bridging the lesion site"
+    ]
+  },
+  {
+    "line_idx": 1739,
+    "new_distractors": [
+      "Neurons directly, causing irreversible cortical atrophy as the primary lesion in multiple sclerosis plaques",
+      "Astrocytes, whose reactive gliosis and blood-brain barrier disruption form the primary pathological feature of MS lesions",
+      "Schwann cells in peripheral nerves, leading to peripheral demyelination, areflexia, and sensory loss in MS",
+      "Microglia, whose chronic activation and phagocytosis of myelin forms the primary inflammatory lesion in MS plaques"
+    ]
+  },
+  {
+    "line_idx": 1744,
+    "new_stem": "Which class of analgesic drugs works primarily by inhibiting cyclooxygenase enzymes (COX-1 and COX-2) to reduce prostaglandin synthesis and peripheral nociceptor sensitisation?",
+    "new_correct": "NSAIDs (e.g. ibuprofen, naproxen, diclofenac), which inhibit COX enzymes to reduce prostaglandin production, peripheral sensitisation, inflammation, and fever",
+    "new_distractors": [
+      "Opioids (e.g. morphine, codeine), which bind \u03bc-opioid receptors to inhibit dorsal horn neuronal excitability and ascending pain signal transmission",
+      "Gabapentinoids (e.g. pregabalin), which bind the \u03b1\u2082\u03b4 subunit of voltage-gated Ca\u00b2\u207a channels to reduce neuropathic and central sensitisation pain",
+      "TCAs (e.g. amitriptyline), which inhibit noradrenaline and serotonin reuptake to enhance the descending pain inhibitory pathways from the brainstem",
+      "Local anaesthetics (e.g. lidocaine), which block voltage-gated Na\u207a channels to prevent action potential conduction in peripheral nociceptors"
+    ]
+  },
+  {
+    "line_idx": 1745,
+    "new_distractors": [
+      "Inhibit COX enzymes to reduce prostaglandin synthesis at peripheral sites of inflammation and tissue injury",
+      "Block voltage-gated Na\u207a channels to prevent action potential firing in pain-sensing peripheral nerve fibres",
+      "Bind the \u03b1\u2082\u03b4 subunit of Ca\u00b2\u207a channels to reduce glutamate and substance P release in the spinal dorsal horn",
+      "Enhance GABA-A Cl\u207b influx to hyperpolarise spinal dorsal horn interneurons and reduce ascending pain signals"
+    ]
+  },
+  {
+    "line_idx": 1746,
+    "new_distractors": [
+      "Activating \u03bc-opioid receptors to inhibit pain transmission in the dorsal horn",
+      "Blocking voltage-gated Na\u207a channels to prevent nociceptor action potentials",
+      "Activating GABA-B receptors to open K\u207a channels and hyperpolarise neurons",
+      "Inhibiting NMDA receptors to prevent wind-up in the dorsal horn"
+    ]
+  },
+  {
+    "line_idx": 1748,
+    "new_distractors": [
+      "Increased COX-2 expression at the injury site leading to local prostaglandin release and peripheral nociceptor sensitisation causing hyperalgesia",
+      "Reduced descending inhibitory control from the periaqueductal grey and rostroventral medulla, allowing increased spinal pain signal transmission",
+      "Peripheral sensitisation of C and A\u03b4 fibres by bradykinin, substance P, and prostaglandins released at sites of ongoing tissue damage",
+      "Upregulation of substance P and CGRP release from primary afferents causing neurogenic inflammation and peripheral nociceptor threshold reduction"
+    ]
+  },
+  {
+    "line_idx": 1749,
+    "new_distractors": [
+      "Begin with strong opioids such as morphine and titrate down once pain is controlled, with NSAIDs as adjuvants only at the lower steps",
+      "Reserve all opioid analgesia for terminal care only, using NSAIDs and paracetamol for all earlier stages of cancer pain management",
+      "Use interventional techniques such as nerve blocks and spinal analgesia as first-line before trialling any systemic pharmacological analgesia",
+      "Administer adjuvant drugs (antidepressants, anticonvulsants) exclusively to avoid opioid dependence, without using any opioid medications in cancer pain"
+    ]
+  },
+  {
+    "line_idx": 1752,
+    "new_stem": "Which hypothalamic nucleus acts as the body\u2019s master circadian pacemaker, receiving light signals via the retinohypothalamic tract to drive the sleep-wake cycle?",
+    "new_correct": "The suprachiasmatic nucleus (SCN), which drives melatonin release from the pineal gland, cortisol diurnal rhythm, and the sleep-wake cycle",
+    "new_distractors": [
+      "The paraventricular nucleus (PVN), which synthesises CRH and oxytocin and regulates the HPA axis stress response and autonomic output",
+      "The supraoptic nucleus (SON), which synthesises ADH and oxytocin for release by the posterior pituitary gland to regulate water balance",
+      "The arcuate nucleus, which produces GnRH, NPY, and POMC to regulate food intake, energy balance, and the HPG axis hormonal output",
+      "The lateral hypothalamic area, which promotes wakefulness and feeding behaviour via orexin (hypocretin) signalling to the brainstem and cortex"
+    ]
+  },
+  {
+    "line_idx": 1753,
+    "new_stem": "Which posterior pituitary hormone triggers uterine smooth muscle contraction during labour and milk ejection from mammary glands in response to suckling?",
+    "new_correct": "Oxytocin, synthesised in the SON and PVN of the hypothalamus and released from the posterior pituitary, causing uterine contractions and milk ejection",
+    "new_distractors": [
+      "Prolactin, an anterior pituitary hormone that stimulates milk production in mammary glands but does not directly trigger milk ejection",
+      "ADH (vasopressin), released from the posterior pituitary to promote renal water reabsorption in the collecting duct via V2 receptors",
+      "GnRH, released pulsatilely from the hypothalamus to stimulate FSH and LH secretion from the anterior pituitary gonadotrophs",
+      "Oestrogen, a steroid hormone that sensitises uterine oxytocin receptors but does not itself directly trigger uterine contractions"
+    ]
+  },
+  {
+    "line_idx": 1754,
+    "new_stem": "Which neuroendocrine axis mediates the physiological stress response through a cascade of CRH, ACTH, and cortisol, with negative feedback at the hypothalamus and pituitary?",
+    "new_correct": "The hypothalamic-pituitary-adrenal (HPA) axis: stress triggers CRH release \u2192 ACTH secretion \u2192 cortisol release from the adrenal cortex, with negative feedback",
+    "new_distractors": [
+      "The hypothalamic-pituitary-thyroid (HPT) axis: TRH \u2192 TSH \u2192 thyroid hormones (T3/T4), which regulate basal metabolic rate and thermogenesis",
+      "The hypothalamic-pituitary-gonadal (HPG) axis: pulsatile GnRH \u2192 FSH and LH \u2192 sex hormone production with negative feedback to the hypothalamus",
+      "The hypothalamic-pituitary-growth hormone axis: GHRH \u2192 GH \u2192 IGF-1, which mediates somatic growth and anabolic metabolic effects in tissues",
+      "The hypothalamic-posterior pituitary axis: osmoreceptors trigger ADH release to regulate plasma osmolality and water balance via kidney"
+    ]
+  },
+  {
+    "line_idx": 1755,
+    "new_stem": "Which hormone is chronically elevated in Cushing\u2019s syndrome, causing central obesity, moon face, purple striae, proximal myopathy, and hypertension?",
+    "new_correct": "Cortisol, produced by the adrenal cortex zona fasciculata, causing Cushing\u2019s syndrome when chronically elevated from any cause (pituitary, adrenal, or ectopic)",
+    "new_distractors": [
+      "Aldosterone, produced by the adrenal cortex zona glomerulosa, causing hypertension and hypokalaemia in primary hyperaldosteronism (Conn\u2019s syndrome)",
+      "Growth hormone, produced by anterior pituitary somatotrophs, causing acromegaly in adults and gigantism when excess occurs before epiphyseal fusion",
+      "ADH (vasopressin), released by the posterior pituitary, causing SIADH with hyponatraemia and inappropriately concentrated urine production",
+      "Thyroxine (T4), produced by thyroid follicular cells, causing hyperthyroidism with weight loss, tachycardia, heat intolerance, and tremor"
+    ]
+  },
+  {
+    "line_idx": 1758,
+    "new_stem": "Which pair of hormones is synthesised in hypothalamic nuclei and released directly from the posterior pituitary gland?",
+    "new_correct": "ADH (vasopressin) and oxytocin",
+    "new_distractors": [
+      "GH (growth hormone) and prolactin",
+      "FSH (follicle-stimulating) and LH",
+      "TRH (thyrotropin-releasing) and CRH",
+      "TSH (thyroid-stimulating) and ACTH"
+    ]
+  },
+  {
+    "line_idx": 1759,
+    "new_distractors": [
+      "Excess glucose in the urine due to insulin deficiency causing hyperglycaemia, osmotic diuresis, and secondary polydipsia",
+      "Insufficient ADH production leading to renal sodium and water retention, concentrated urine, and peripheral oedema",
+      "Excessive aldosterone secretion causing hypertension, hypokalaemia, and metabolic alkalosis via Na\u207a retention in the distal nephron",
+      "Hypercalcaemia causing nephrogenic resistance to ADH with polyuria, polydipsia, and risk of calcium oxalate kidney stone formation"
+    ]
+  },
+  {
+    "line_idx": 1761,
+    "new_distractors": [
+      "LH and FSH are released tonically at constant levels from the pituitary to maintain stable sex hormone production without requiring pulsatile input",
+      "Continuous GnRH secretion stimulates FSH and LH production; pulsatility is only required for down-regulation and not for normal gonadal function",
+      "Sex hormones from the gonads positively stimulate GnRH release at all times, creating a permanent positive feedback loop that drives the reproductive cycle",
+      "FSH directly stimulates testosterone production in Leydig cells of the testis, bypassing the need for LH in the male HPG axis"
+    ]
+  },
+  {
+    "line_idx": 1767,
+    "new_stem": "In Parkinson\u2019s disease, which structure undergoes selective loss of dopaminergic neurons, disrupting the nigrostriatal pathway and reducing striatal dopamine?",
+    "new_correct": "Substantia nigra pars compacta",
+    "new_distractors": [
+      "Globus pallidus pars interna (GPi)",
+      "Subthalamic nucleus (STN)",
+      "Striatum (caudate and putamen)",
+      "Ventral tegmental area (VTA)"
+    ]
+  },
+  {
+    "line_idx": 1769,
+    "new_distractors": [
+      "Increase dopamine catabolism in the striatum",
+      "Prevent CNS dopamine breakdown by MAO-B",
+      "Block striatal dopamine D2 receptors",
+      "Sensitise post-synaptic dopamine receptors"
+    ]
+  },
+  {
+    "line_idx": 1773,
+    "new_distractors": [
+      "Resting pill-rolling tremor",
+      "Cerebellar intention tremor",
+      "Focal limb dystonia at onset",
+      "Bradykinesia and rigidity"
+    ]
+  },
+  {
+    "line_idx": 1774,
+    "new_distractors": [
+      "Low-frequency STN stimulation excites surviving dopaminergic neurons in the substantia nigra, partially restoring nigrostriatal dopamine output to the striatum",
+      "DBS replaces lost dopaminergic neurons by directly releasing dopamine into the striatum through the implanted electrode tip",
+      "DBS destroys the indirect pathway permanently by ablating the STN, mimicking the effect of a pallidotomy on GPi output",
+      "High-frequency DBS excites the GPe to suppress the indirect pathway, directly reducing striatal inhibition of thalamic motor relay nuclei"
+    ]
+  },
+  {
+    "line_idx": 1780,
+    "new_distractors": [
+      "Any seizure with loss of consciousness regardless of duration or inter-ictal recovery between episodes",
+      "Two or more seizures in 24 hours with complete recovery between each individual episode",
+      "A single tonic-clonic seizure requiring emergency IV benzodiazepine treatment in the emergency department",
+      "Recurrent focal seizures without secondary generalisation occurring over a 48-hour monitoring period"
+    ]
+  },
+  {
+    "line_idx": 1781,
+    "new_distractors": [
+      "Blocking Na\u207a channels only to stabilise hyperexcitable neuronal membranes and reduce focal discharge",
+      "Enhancing GABA-A by binding the benzodiazepine allosteric site on the ionotropic receptor complex",
+      "Blocking NMDA glutamate receptors to reduce calcium-mediated excitotoxicity and cortical spreading",
+      "Inhibiting AMPA receptors to reduce glutamatergic excitation in the thalamocortical seizure circuit"
+    ]
+  },
+  {
+    "line_idx": 1785,
+    "new_distractors": [
+      "Focal spike discharges over the temporal lobe",
+      "Periodic lateralised epileptiform discharges (PLEDs)",
+      "Hypsarrhythmia (chaotic high-amplitude slow waves)",
+      "Continuous spike-wave during slow-wave sleep"
+    ]
+  },
+  {
+    "line_idx": 1786,
+    "new_distractors": [
+      "Childhood absence epilepsy with 3 Hz spike-wave discharges and brief staring episodes without post-ictal confusion",
+      "Juvenile myoclonic epilepsy with morning myoclonic jerks, tonic-clonic seizures, and absence episodes in adolescents",
+      "Infantile spasms (West syndrome) with hypsarrhythmia on EEG and developmental regression in the first year of life",
+      "Lennox-Gastaut syndrome with multiple refractory seizure types and slow spike-wave on EEG in childhood"
+    ]
+  },
+  {
+    "line_idx": 1796,
+    "new_distractors": [
+      "ECG to exclude a prolonged QTc interval before starting intravenous antibiotics that may cause cardiac arrhythmias",
+      "Chest X-ray to exclude pneumonia or pulmonary source of infection causing secondary haematogenous bacterial meningitis",
+      "MRI brain to identify white matter changes consistent with viral encephalitis or autoimmune demyelinating disease",
+      "Echocardiogram to exclude infective endocarditis as a source of septic emboli before performing invasive lumbar puncture"
+    ]
+  },
+  {
+    "line_idx": 1797,
+    "new_distractors": [
+      "Neutrophilia, very low glucose, and very high protein, consistent with acute pyogenic bacterial meningitis",
+      "Normal white cell count, normal glucose, and mildly elevated protein consistent with aseptic viral meningitis",
+      "Eosinophilia, normal glucose, and mild protein elevation, seen in parasitic CNS infections such as neurocysticercosis",
+      "Neutrophilia with normal glucose and low protein seen in early partially treated bacterial meningitis"
+    ]
+  },
+  {
+    "line_idx": 1800,
+    "new_stem": "Which protein, cleaved from APP by \u03b2-secretase and \u03b3-secretase, accumulates extracellularly as senile plaques in Alzheimer\u2019s disease?",
+    "new_correct": "Amyloid-beta (A\u03b242), formed by sequential APP cleavage, which aggregates into oligomers and then insoluble senile plaques in the cerebral cortex",
+    "new_distractors": [
+      "Tau protein, which forms intracellular neurofibrillary tangles when hyperphosphorylated and dissociates from microtubule-associated tracks",
+      "Alpha-synuclein, which aggregates as intraneuronal Lewy bodies in dopaminergic neurons in Parkinson\u2019s and Lewy body dementia",
+      "TDP-43, a nuclear RNA-binding protein that mislocalises to the cytoplasm and aggregates in ALS and frontotemporal dementia",
+      "Prion protein (PrPSc), which misfolds and propagates through a templating mechanism causing Creutzfeldt-Jakob disease"
+    ]
+  },
+  {
+    "line_idx": 1806,
+    "new_distractors": [
+      "Later onset (typically >70 years) with memory loss as the presenting feature, followed by gradual behavioural change and progressive cognitive decline",
+      "Presence of Lewy bodies in cortical neurons causing fluctuating cognition, recurrent visual hallucinations, and REM sleep behaviour disorder",
+      "Stepwise cognitive deterioration following discrete strokes, associated with hypertension and periventricular white matter changes on MRI",
+      "Excellent and sustained response to acetylcholinesterase inhibitors, with preserved cholinergic neurons in the nucleus basalis of Meynert"
+    ]
+  },
+  {
+    "line_idx": 1809,
+    "new_distractors": [
+      "Amyloid-beta plaque deposition and tau neurofibrillary tangle formation in the hippocampus and cortex",
+      "Cortical Lewy body accumulation causing fluctuating cognition, visual hallucinations, and parkinsonism",
+      "Prion protein misfolding causing rapid progressive cognitive decline with myoclonus and periodic EEG discharges",
+      "Autoimmune attack on cortical synaptic proteins causing subacute encephalitis with seizures and psychiatric features"
+    ]
+  },
+  {
+    "line_idx": 1812,
+    "new_distractors": [
+      "Exacerbate visual hallucinations further",
+      "Cause irreversible liver toxicity",
+      "Eliminate cognitive symptoms fully",
+      "Cause acute serotonin syndrome"
+    ]
+  },
+  {
+    "line_idx": 1815,
+    "new_distractors": [
+      "Daily vitamin E and omega-3 supplementation to reduce neuroinflammation and free radical-mediated neuronal damage in ageing",
+      "Starting statin therapy after age 70 to reduce cerebrovascular burden and prevent multi-infarct and vascular dementia progression",
+      "Taking prophylactic aspirin long-term to prevent platelet aggregation and reduce risk of cerebrovascular events and vascular dementia",
+      "Complete abstinence from alcohol to eliminate neurotoxic effects on hippocampal neurogenesis and long-term potentiation"
+    ]
+  },
+  {
+    "line_idx": 1818,
+    "new_distractors": [
+      "Dopamine and GABA (gamma-aminobutyric acid)",
+      "Acetylcholine and glutamate (NMDA receptor)",
+      "GABA and glycine (inhibitory amino acid transmitters)",
+      "Histamine and substance P (neuropeptide)"
+    ]
+  },
+  {
+    "line_idx": 1819,
+    "new_stem": "In the brain circuit dysfunction model of depression, which regions show reduced activity, contributing to cognitive impairment, anhedonia, and reduced positive affect?",
+    "new_correct": "The prefrontal cortex and hippocampus, whose decreased activity contributes to cognitive deficits, reduced reward processing, and impaired emotional regulation",
+    "new_distractors": [
+      "The amygdala and hypothalamus, which show increased activity in depression, driving hyperactivation of the HPA stress axis",
+      "The locus coeruleus and raphe nuclei, which are the source of noradrenaline and serotonin projections to the cortex and limbic system",
+      "The basal ganglia and nucleus accumbens, whose reduced dopaminergic signalling contributes to psychomotor slowing and anhedonia",
+      "The anterior cingulate cortex and insula, which show altered activity during emotional processing and interoceptive awareness"
+    ]
+  },
+  {
+    "line_idx": 1820,
+    "new_distractors": [
+      "Reduced cortisol production with an impaired stress response, leading to fatigue, orthostatic hypotension, and reduced immune function",
+      "Elevated ACTH with normal cortisol levels due to adrenal hypo-responsiveness and glucocorticoid receptor downregulation",
+      "Low CRH and high ACTH due to a pituitary adenoma causing autonomous corticotroph secretion with normal adrenal gland function",
+      "Primary adrenal insufficiency causing low cortisol with compensatory high ACTH and CRH secretion (Addison\u2019s disease)"
+    ]
+  },
+  {
+    "line_idx": 1821,
+    "new_distractors": [
+      "Monoamine-enhancing drugs always produce immediate improvement in mood, confirming that direct receptor activity is entirely sufficient to explain antidepressant efficacy",
+      "SSRIs have no measurable effect on synaptic serotonin levels, so their mechanism of action is entirely unrelated to monoamine neurotransmitter concentration",
+      "All antidepressants act exclusively on monoamine systems, with no credible evidence for any alternative mechanism involving neuroplasticity or inflammatory pathways",
+      "The monoamine hypothesis fully explains antidepressant non-response, as treatment failure simply reflects individual pharmacokinetic and drug metabolism variability"
+    ]
+  },
+  {
+    "line_idx": 1822,
+    "new_distractors": [
+      "High-dose SSRI combination therapy with augmentation agents such as lithium or atypical antipsychotics",
+      "Lithium augmentation added to antidepressant monotherapy as a second-line intervention",
+      "Cognitive behavioural therapy alone without any pharmacological treatment or biological intervention",
+      "Ketamine infusion as a routine long-term maintenance treatment for chronic treatment-resistant depression"
+    ]
+  },
+  {
+    "line_idx": 1823,
+    "new_distractors": [
+      "GABA and dopamine from reduced inhibitory interneuron activity causing disinhibition in the prefrontal cortex",
+      "Acetylcholine and BDNF from enhanced hippocampal cholinergic neurotransmission and neurotrophin signalling",
+      "Anti-inflammatory cytokines (IL-10, TGF-\u03b2) from regulatory T-cell activation suppressing neuroinflammatory cascades",
+      "Reduced complement proteins and decreased glial fibrillary acidic protein (GFAP) expression in white matter"
+    ]
+  },
+  {
+    "line_idx": 1824,
+    "new_distractors": [
+      "At least five of nine diagnostic criteria present for at least two weeks with one core symptom of depressed mood or loss of interest (DSM-5 criteria)",
+      "A manic episode of at least one week in the preceding 12 months combined with at least one depressive episode of two weeks duration",
+      "Suicidal ideation as a mandatory core criterion combined with three or more associated symptoms persisting for at least two weeks",
+      "At least three months of persistent symptoms including cognitive impairment, psychomotor change, and significant functional impairment"
+    ]
+  },
+  {
+    "line_idx": 1827,
+    "new_distractors": [
+      "Fear is a chronic emotional state that persists long after threat removal; anxiety is an acute response present only during immediate danger",
+      "Fear involves only physical symptoms mediated by the sympathetic nervous system; anxiety is a purely cognitive and psychological phenomenon",
+      "Fear is always pathological and requires clinical treatment; anxiety is a normal adaptive response that occurs in all individuals",
+      "Fear exclusively occurs in specific phobias and PTSD; anxiety only presents in generalised anxiety disorder and panic disorder"
+    ]
+  },
+  {
+    "line_idx": 1828,
+    "new_distractors": [
+      "2 weeks on most days with associated panic attacks and at least three somatic symptoms of autonomic arousal and physical tension",
+      "1 month with continuous severe worry and avoidance behaviours causing significant functional impairment in daily activities",
+      "12 months with constant severe symptoms including psychomotor agitation, insomnia, and difficulty concentrating",
+      "3 months with clearly defined avoidance behaviours targeting specific situations that cause significant functional disability"
+    ]
+  },
+  {
+    "line_idx": 1829,
+    "new_distractors": [
+      "Regulating appetite, energy balance, and body weight through integration of leptin and ghrelin signals from the periphery and hypothalamus",
+      "Producing cortisol in response to stress by activating the HPA axis via direct projections to the pituitary and adrenal cortex",
+      "Inhibiting fear responses via GABAergic interneurons that suppress basolateral complex activity and prevent downstream autonomic activation",
+      "Mediating conscious and deliberate decision-making about threats via connections with the prefrontal cortex and hippocampal memory systems"
+    ]
+  },
+  {
+    "line_idx": 1831,
+    "new_distractors": [
+      "Stress is determined entirely by the objective severity of the external stressor, independent of the individual\u2019s subjective appraisal or available coping resources",
+      "All individuals show identical stress responses to the same stressor, as physiological stress reactions are hardwired by evolutionary biological mechanisms",
+      "Emotion-focused coping is always superior to problem-focused coping regardless of whether the stressor is controllable or uncontrollable by the individual",
+      "Stress responses are genetically predetermined and cannot be meaningfully modified by psychological, behavioural, or cognitive reappraisal interventions"
+    ]
+  },
+  {
+    "line_idx": 1832,
+    "new_distractors": [
+      "Direct CNS neurodegeneration in the amygdala and prefrontal cortex causing progressive structural loss and worsening anxiety over time",
+      "Low cortisol from HPA axis hypoactivity reducing sympathetic tone, producing fatigue, hypotension, and orthostatic dizziness",
+      "Decreased amygdala activity reducing arousal threshold and producing paradoxical calm despite the presence of genuine external threat",
+      "Excess serotonin in the peripheral nervous system activating gut receptors causing nausea, diarrhoea, and peripheral vasodilatation"
+    ]
+  },
+  {
+    "line_idx": 1837,
+    "new_distractors": [
+      "It causes significant nephrotoxicity through accumulation of active desmethyl metabolites in the renal tubular cells",
+      "It potently induces hepatic CYP3A4 enzymes causing clinically significant pharmacokinetic drug interactions with other antiepileptics",
+      "It only suppresses absence seizures and has no clinically meaningful effect on focal or generalised tonic-clonic seizure types",
+      "It has no clinically meaningful effect on any generalised seizure type when used beyond the first few weeks of treatment"
+    ]
+  },
+  {
+    "line_idx": 1844,
+    "new_distractors": [
+      "Enhance CNS penetration of levodopa by increasing blood-brain barrier permeability through inhibition of P-glycoprotein efflux transporter",
+      "Prevent dopamine breakdown within CNS neurons by inhibiting the catechol-O-methyltransferase (COMT) enzyme at central synapses",
+      "Sensitise striatal dopamine D1 and D2 receptors to increase the clinical efficacy of each dose of levodopa in the motor circuit",
+      "Prevent MAO-B from degrading dopamine in the synaptic cleft, prolonging the duration of dopaminergic action at striatal synapses"
+    ]
+  },
+  {
+    "line_idx": 1852,
+    "new_distractors": [
+      "Priapism (prolonged painful erection)",
+      "Increased libido and hypersexuality",
+      "Anorgasmia exclusively in female patients",
+      "Retrograde ejaculation in male patients"
+    ]
+  },
+  {
+    "line_idx": 1853,
+    "new_distractors": [
+      "Dopamine reuptake transporter (DAT)",
+      "Monoamine oxidase A enzyme (MAO-A)",
+      "Alpha-1 adrenergic postsynaptic receptors",
+      "H1 histamine presynaptic autoreceptors"
+    ]
+  },
+  {
+    "line_idx": 1856,
+    "new_distractors": [
+      "Blocks serotonin reuptake more potently than standard SSRIs, producing immediate serotonergic flooding at post-synaptic receptors",
+      "Inhibits MAO-B selectively, increasing synaptic dopamine and phenylethylamine levels in prefrontal cortex synapses",
+      "Activates dopamine D2 receptors in the prefrontal cortex to restore motivational drive and reward circuitry function",
+      "Enhances GABA-A receptor function to reduce neuronal hyperexcitability and promote restorative slow-wave sleep architecture"
+    ]
+  },
+  {
+    "line_idx": 1860,
+    "new_distractors": [
+      "Voltage-gated Na\u207a channels opened by membrane depolarisation during the action potential",
+      "Voltage-gated Ca\u00b2\u207a channels in the presynaptic terminal triggered by depolarisation",
+      "ATP-sensitive K\u207a channels responding to the metabolic state of the photoreceptor",
+      "Na\u207a/K\u207a ATPase actively maintaining the resting membrane potential of the cell"
+    ]
+  },
+  {
+    "line_idx": 1861,
+    "new_distractors": [
+      "It is more amenable to surgical and medical treatment with hearing aids and middle ear procedures",
+      "It involves outer or middle ear pathology such as wax impaction, otitis media, or ossicular chain damage",
+      "It is always bilateral and symmetrical in distribution due to systemic toxic or genetic causes",
+      "It is diagnosed by audiometry alone without need for the Weber or Rinne tuning fork tests"
+    ]
+  },
+  {
+    "line_idx": 1862,
+    "new_distractors": [
+      "Pain signals are always proportional to the severity of tissue damage, with no modulatory influence from CNS or peripheral gating mechanisms",
+      "Small C fibres always inhibit pain transmission by activating enkephalin-containing interneurons in the substantia gelatinosa of the spinal cord",
+      "The brain has no role in pain modulation and all pain processing occurs exclusively at the level of peripheral nociceptors and the spinal cord",
+      "Endogenous opioids act only peripherally at nociceptor terminals to reduce action potential firing and have no spinal or supraspinal actions"
+    ]
+  },
+  {
+    "line_idx": 1870,
+    "new_distractors": [
+      "Earlier onset of prominent resting tremor with an excellent and sustained response to levodopa therapy throughout the disease course",
+      "Excellent and sustained levodopa response with motor fluctuations and dyskinesias appearing only after many years of treatment",
+      "Presence of cortical Lewy bodies causing fluctuating cognition, recurrent visual hallucinations, and REM sleep behaviour disorder",
+      "Association with LRRK2 or PINK1 gene mutations causing familial parkinsonism with predominantly tremor-dominant clinical phenotype"
+    ]
+  },
+  {
+    "line_idx": 1872,
+    "new_distractors": [
+      "It only affects patients with underlying neurological disease such as Parkinson\u2019s or motor neuron disease causing denervation muscle atrophy",
+      "It is caused exclusively by vitamin D deficiency and calcium malabsorption leading to secondary osteoporotic proximal muscle weakness",
+      "It exclusively affects the lower limb musculature and does not involve upper limb, trunk, or respiratory muscle groups",
+      "It is fully reversible after a single intensive course of systemic corticosteroids combined with high-protein dietary supplementation"
+    ]
+  },
+  {
+    "line_idx": 1877,
+    "new_distractors": [
+      "CPP = systolic BP \u2212 ICP = 107 \u2212 24 = 83 mmHg, using systolic as the effective driving pressure for cerebral perfusion",
+      "CPP = diastolic BP \u2212 ICP = 56 \u2212 24 = 32 mmHg, since diastolic pressure reflects continuous organ perfusion pressure",
+      "CPP = MAP + ICP = 73 + 24 = 97 mmHg, as ICP adds to the net driving pressure for cerebral blood flow",
+      "CPP = pulse pressure \u2212 ICP = 51 \u2212 24 = 27 mmHg, using the pulsatile component of arterial pressure"
+    ]
+  },
+  {
+    "line_idx": 1878,
+    "new_distractors": [
+      "Tachycardia, hypotension, and tachypnoea \u2014 the classic triad of systemic inflammatory response to neurogenic shock",
+      "Fever, bradycardia, and acute confusion \u2014 indicating hypothalamic compression and autonomic thermoregulatory dysregulation",
+      "Hypertension, tachycardia, and bilaterally fixed dilated pupils \u2014 indicating transtentorial herniation with CN III compression",
+      "Tachycardia, widening pulse pressure, and hyperthermia \u2014 from hypothalamic involvement and sympathetic storm dysregulation"
+    ]
+  },
+  {
+    "line_idx": 1882,
+    "new_distractors": [
+      "Social class, income, educational attainment, and access to healthcare services as the primary structural drivers of health behaviour",
+      "The quality of the patient-doctor relationship, trust in clinical advice, and overall satisfaction with healthcare interactions",
+      "Fear of diagnosis and avoidance of medical encounters due to anticipated treatment burden, stigma, and loss of control",
+      "Availability of healthcare services, waiting times, and geographic proximity to primary care facilities in the local area"
+    ]
+  },
+  {
+    "line_idx": 1886,
+    "new_distractors": [
+      "The anatomical brain regions including the prefrontal cortex and basal ganglia that control automatic and deliberate health decisions",
+      "The legal and institutional framework governing patient rights, healthcare access, and valid consent for medical treatment",
+      "The social network of peers, family, and community members who positively or negatively reinforce health-promoting behaviours",
+      "The general practitioner\u2019s influence over patient lifestyle choices through prescribing, counselling, and repeated consultations"
+    ]
+  },
+  {
+    "line_idx": 1889,
+    "new_distractors": [
+      "Incidence measures the total burden of existing disease in a population at one point in time, while prevalence counts only newly diagnosed cases during a study period",
+      "Both incidence and prevalence measure the same epidemiological quantity but apply to different population sizes requiring different sampling frameworks",
+      "Prevalence is exclusively measured in retrospective cohort and case-control studies, whereas incidence can only be calculated from prospective study designs",
+      "Incidence always requires a matched control group to calculate attributable risk, whereas prevalence can be estimated from cross-sectional surveys alone"
+    ]
+  }
+]
