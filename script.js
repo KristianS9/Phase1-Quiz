@@ -1493,39 +1493,17 @@ function openSetup(blockId) {
   Object.keys(b.lectures).forEach(lec => {
     const label = document.createElement('label');
     label.className = 'lec-check';
-    label.innerHTML = `<input type="checkbox" value="${lec}" checked onchange="updateAiCountNote()"> ${lec}`;
+    label.innerHTML = `<input type="checkbox" value="${lec}" checked> ${lec}`;
     lecGrid.appendChild(label);
   });
-  // Reset AI toggle to off (default) each time setup opens
-  const aiTog = document.getElementById('aiToggle');
-  if (aiTog) aiTog.checked = false;
-  document.getElementById('aiToggleRow').style.display = 'none';
   document.getElementById('setupModal').style.display = 'flex';
 }
 function toggleMode() {
   const mode = document.getElementById('modeSelect').value;
-  const isFormative = String(state.blockId).startsWith('f');
   document.getElementById('randomRow').style.display = mode === 'random' ? 'block' : 'none';
-  document.getElementById('aiToggleRow').style.display = (mode === 'random' && !isFormative) ? 'block' : 'none';
-  if (mode === 'random' && !isFormative) updateAiCountNote();
-}
-
-function updateAiCountNote() {
-  const b = BLOCKS[state.blockId];
-  if (!b) return;
-  const selected = Array.from(document.querySelectorAll('#lecGrid input:checked')).map(cb => cb.value);
-  let wmsCount = 0, userCount = 0;
-  selected.forEach(lec => {
-    (b.lectures[lec] || []).forEach(q => {
-      isWMSQuestion(q) ? wmsCount++ : userCount++;
-    });
-  });
-  const note = document.getElementById('aiCountNote');
-  if (note) note.textContent = `${wmsCount} WMS · ${userCount} user-generated questions available`;
 }
 function setAllLecs(checked) {
   document.querySelectorAll('#lecGrid input[type=checkbox]').forEach(cb => cb.checked = checked);
-  updateAiCountNote();
 }
 function closeSetup() { document.getElementById('setupModal').style.display = 'none'; }
 
@@ -1567,14 +1545,8 @@ function startAllRandom() {
     });
   });
 
-  const { wms: wmsPool, user: userPool } = splitBySource(fullPool);
-
-  // All Random always includes WMS + user-generated questions (no toggle in this mode)
-  // Both pools shuffled, then combined and re-shuffled for even distribution
-  fisherYates(wmsPool);
-  fisherYates(userPool);
-  let pool = [...wmsPool, ...userPool];
-  fisherYates(pool);
+  fisherYates(fullPool);
+  let pool = fullPool;
 
   // Apply shuffleAnswers after combining
   pool = pool.map(item => ({ ...item, q: shuffleAnswers(item.q) }));
@@ -1594,26 +1566,6 @@ function startAllRandom() {
 }
 
 
-// ═══════════════════════════════════════════════════════════════
-// QUESTION SOURCE CLASSIFICATION
-// ═══════════════════════════════════════════════════════════════
-const WMS_SOURCE_MARKERS = ['From the CTB Block', 'From the CTB End'];
-
-function isWMSQuestion(qArr) {
-  // qArr = [text, opts, correct, explanation]
-  // WMS = official Warwick End-of-Lecture/Session questions
-  const expl = qArr[3] || '';
-  return WMS_SOURCE_MARKERS.some(m => expl.includes(m));
-}
-
-function splitBySource(pool) {
-  // Returns { wms: [...], user: [...] }
-  const wms = [], user = [];
-  pool.forEach(item => {
-    (isWMSQuestion(item.q) ? wms : user).push(item);
-  });
-  return { wms, user };
-}
 
 function startQuiz() {
   const mode = document.getElementById('modeSelect').value;
@@ -1642,28 +1594,9 @@ function startQuiz() {
       b.lectures[lec].forEach((q, idx) => pool.push({lecture: lec, qIdx: idx, q, blockName: b.name}));
     });
     if (mode === 'random') {
-      const includeUser = document.getElementById('aiToggle') && document.getElementById('aiToggle').checked;
-      const { wms: wmsPool, user: userPool } = splitBySource(pool);
-
-      // Shuffle each sub-pool independently
-      fisherYates(wmsPool);
-      fisherYates(userPool);
-
-      if (includeUser) {
-        // Fill slots with WMS questions first, then pad with user-generated
-        const wmsSlice = wmsPool.slice(0, numQ);
-        const remaining = numQ - wmsSlice.length;
-        const userSlice = remaining > 0 ? userPool.slice(0, remaining) : [];
-        pool = [...wmsSlice, ...userSlice];
-        fisherYates(pool); // re-shuffle so user questions don't cluster at the end
-      } else {
-        // WMS questions only — if not enough, silently use all available WMS questions
-        pool = wmsPool.slice(0, Math.min(numQ, wmsPool.length));
-      }
-
-      // Apply shuffleAnswers now (after source split, before presentation)
+      fisherYates(pool);
+      pool = pool.slice(0, Math.min(numQ, pool.length));
       pool = pool.map(item => ({ ...item, q: shuffleAnswers(item.q) }));
-
       state.isRandom = true;
       state.isAllRandom = false;
     } else {
