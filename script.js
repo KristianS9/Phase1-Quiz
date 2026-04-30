@@ -55,9 +55,11 @@ document.getElementById('gateEmail').addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════════════
 // VERSION & CHANGELOG
 // ═══════════════════════════════════════════════════════════════
-const QUIZ_VERSION = "v23.4";
+const QUIZ_VERSION = "v23.5";
 
 const CHANGELOG = [
+  { version:"v23.5", date:"30 Apr 2026", summary:"All Random mode overhaul — count picker, working summary, separate stats",
+    changes:["All Random mode now prompts for question count before starting (presets: 10, 25, 50, 100, All, or custom)","Questions drawn from a blend of all blocks, shuffled fresh each time","Results page now works correctly for all-random attempts, with lecture breakdown grouped by block","All Random stats tracked separately from per-block stats — new 'All Random' tab on the Summary Stats page with trend chart, topic accuracy chart, and recommendations","Per-block rolling stats are kept clean and unaffected by all-random sessions","History page now correctly displays all-random attempts under 'All Blocks'"] },
   { version:"v23.4", date:"29 Apr 2026", summary:"Block 1 distractor quality pass — 65 questions rewritten",
     changes:["Rewrote distractors for all 65 flagged Block 1 questions across energy metabolism, carbohydrates & lipids, GI physiology, GI absorption, kidney, endocrinology, thyroid, adrenal, pharmacology, homeostasis, cellular adaptations, and shock topics","2 short-answer questions received fully rewritten stems and full-sentence correct answers to eliminate length-bias giveaways","All 5 options per question now broadly equal in length (no option >1.7× average) — correct answer no longer identifiable by length alone","All distractors drawn from the same lecture topic as each question for realistic clinical reasoning challenge","Correct answers unchanged throughout — only distractors and stems updated"] },
   { version:"v23.3", date:"29 Apr 2026", summary:"Remove random selection toggle — all questions included",
@@ -1592,23 +1594,67 @@ function shuffleAnswers(q) {
 // ═══════════════════════════════════════════════════════════════
 // ALL QUESTIONS — RANDOM ORDER (dedicated home button)
 // ═══════════════════════════════════════════════════════════════
+let pendingAllRandomPool = [];
+let arSelectedCount = null;
+
 function startAllRandom() {
   // Build pool: every question from every block and lecture
-  // User-uploaded questions are always included; AI questions included by default in All Random
-  let fullPool = [];
+  pendingAllRandomPool = [];
   Object.entries(BLOCKS).forEach(([bid, block]) => {
     Object.entries(block.lectures).forEach(([lec, qs]) => {
       qs.forEach((q, idx) => {
-        fullPool.push({ lecture: lec, qIdx: idx, q, blockName: block.name });
+        pendingAllRandomPool.push({ lecture: lec, qIdx: idx, q, blockName: block.name, blockId: bid });
       });
     });
   });
+  fisherYates(pendingAllRandomPool);
 
-  fisherYates(fullPool);
-  let pool = fullPool;
+  // Reset selection state
+  arSelectedCount = null;
+  document.getElementById('arStartBtn').disabled = true;
+  document.getElementById('arCustom').value = '';
 
-  // Apply shuffleAnswers after combining
-  pool = pool.map(item => ({ ...item, q: shuffleAnswers(item.q) }));
+  // Build preset buttons
+  const presets = [10, 25, 50, 100, pendingAllRandomPool.length];
+  const presetLabels = ['10', '25', '50', '100', 'All (' + pendingAllRandomPool.length + ')'];
+  const container = document.getElementById('arPresets');
+  container.innerHTML = '';
+  presets.forEach((n, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'ar-preset-btn';
+    btn.textContent = presetLabels[i];
+    btn.dataset.count = n;
+    btn.onclick = () => arSelectCount(n, null, btn);
+    container.appendChild(btn);
+  });
+
+  document.getElementById('arModal').style.display = 'flex';
+}
+
+function arSelectCount(count, customVal, clickedBtn) {
+  const n = count !== null ? count : parseInt(customVal);
+  if (!n || n < 1) { arSelectedCount = null; document.getElementById('arStartBtn').disabled = true; return; }
+  arSelectedCount = Math.min(n, pendingAllRandomPool.length);
+  document.getElementById('arStartBtn').disabled = false;
+  // Highlight selected preset button
+  document.querySelectorAll('.ar-preset-btn').forEach(b => b.classList.remove('on'));
+  if (clickedBtn) {
+    clickedBtn.classList.add('on');
+    document.getElementById('arCustom').value = '';
+  } else {
+    document.querySelectorAll('.ar-preset-btn').forEach(b => b.classList.remove('on'));
+  }
+}
+
+function closeArModal() {
+  document.getElementById('arModal').style.display = 'none';
+}
+
+function confirmAllRandom() {
+  if (!arSelectedCount) return;
+  closeArModal();
+
+  const pool = pendingAllRandomPool.slice(0, arSelectedCount).map(item => ({ ...item, q: shuffleAnswers(item.q) }));
 
   state.questions    = pool;
   state.answers      = {};
@@ -1619,7 +1665,7 @@ function startAllRandom() {
   state.blockId      = 'all';
   clearResume();
 
-  document.getElementById('qTitle').textContent = '⚡ All Blocks — Full Random';
+  document.getElementById('qTitle').textContent = 'All Blocks — Random Mix (' + arSelectedCount + ' questions)';
   showScreen('quiz');
   renderQ();
 }
@@ -1772,12 +1818,14 @@ function selectAnswer(i) {
   const correctIdx = ['A','B','C','D','E'].indexOf(q[2]);
   const isCorrect = i === correctIdx;
 
-  // Update rolling stats
-  if (!allStats[state.blockId]) allStats[state.blockId] = {};
-  if (!allStats[state.blockId][lecture]) allStats[state.blockId][lecture] = {answered:0, correct:0};
-  allStats[state.blockId][lecture].answered++;
-  if (isCorrect) allStats[state.blockId][lecture].correct++;
-  saveStats();
+  // Update rolling stats (skip for all-random — tracked via allAttempts only)
+  if (!state.isAllRandom) {
+    if (!allStats[state.blockId]) allStats[state.blockId] = {};
+    if (!allStats[state.blockId][lecture]) allStats[state.blockId][lecture] = {answered:0, correct:0};
+    allStats[state.blockId][lecture].answered++;
+    if (isCorrect) allStats[state.blockId][lecture].correct++;
+    saveStats();
+  }
 
   renderQ();
 }
@@ -1819,7 +1867,7 @@ function saveAttemptRecord() {
   const record = {
     id: state.attemptId,
     blockId: state.blockId,
-    blockName: BLOCKS[state.blockId].name,
+    blockName: state.blockId === 'all' ? 'All Blocks' : BLOCKS[state.blockId].name,
     date: new Date().toISOString(),
     total, answered, correct,
     pct: answered ? Math.round(correct/answered*100) : 0,
@@ -1854,20 +1902,48 @@ function showResults() {
   const msg = pct >= 70 ? '🎉 Well done!' : pct >= 50 ? '📚 Keep revising' : '⚠️ Focus needed';
 
   let tableRows = '';
-  Object.entries(lecBreakdown).forEach(([lec, d]) => {
-    const p = d.answered ? Math.round(d.correct/d.answered*100) : null;
-    const lost = d.answered - d.correct;
-    const barCls = p === null ? '' : p >= 70 ? 'bar-g' : p >= 50 ? 'bar-a' : 'bar-r';
-    tableRows += `<tr>
-      <td style="max-width:220px;font-size:13px">${lec}</td>
-      <td style="text-align:center;font-size:12px">${d.total}</td>
-      <td style="text-align:center;font-size:12px">${d.answered}</td>
-      <td style="text-align:center"><span class="lost-badge ${lost>0?'lost-bad':'lost-ok'}">${lost||'–'}</span></td>
-      <td style="min-width:110px">
-        ${p !== null ? `<div class="bar-cell"><div class="bar-bg"><div class="bar-fill ${barCls}" style="width:${p}%"></div></div><span class="pct-label">${p}%</span></div>` : '<span style="font-size:12px;color:var(--text3)">–</span>'}
-      </td>
-    </tr>`;
-  });
+  if (state.isAllRandom) {
+    // Group lectures by block for all-random mode
+    const blockGroups = {};
+    qs.forEach(item => {
+      if (!blockGroups[item.blockName]) blockGroups[item.blockName] = [];
+      if (!blockGroups[item.blockName].includes(item.lecture)) blockGroups[item.blockName].push(item.lecture);
+    });
+    Object.entries(blockGroups).forEach(([blockName, lecs]) => {
+      tableRows += `<tr><td colspan="5" style="background:var(--bg-1);font-size:12px;font-weight:600;color:var(--ink-dim);padding:4px 8px;letter-spacing:0.05em">${blockName}</td></tr>`;
+      lecs.forEach(lec => {
+        const d = lecBreakdown[lec];
+        if (!d) return;
+        const p = d.answered ? Math.round(d.correct/d.answered*100) : null;
+        const lost = d.answered - d.correct;
+        const barCls = p === null ? '' : p >= 70 ? 'bar-g' : p >= 50 ? 'bar-a' : 'bar-r';
+        tableRows += `<tr>
+          <td style="max-width:220px;font-size:13px;padding-left:16px">${lec}</td>
+          <td style="text-align:center;font-size:12px">${d.total}</td>
+          <td style="text-align:center;font-size:12px">${d.answered}</td>
+          <td style="text-align:center"><span class="lost-badge ${lost>0?'lost-bad':'lost-ok'}">${lost||'–'}</span></td>
+          <td style="min-width:110px">
+            ${p !== null ? `<div class="bar-cell"><div class="bar-bg"><div class="bar-fill ${barCls}" style="width:${p}%"></div></div><span class="pct-label">${p}%</span></div>` : '<span style="font-size:12px;color:var(--text3)">–</span>'}
+          </td>
+        </tr>`;
+      });
+    });
+  } else {
+    Object.entries(lecBreakdown).forEach(([lec, d]) => {
+      const p = d.answered ? Math.round(d.correct/d.answered*100) : null;
+      const lost = d.answered - d.correct;
+      const barCls = p === null ? '' : p >= 70 ? 'bar-g' : p >= 50 ? 'bar-a' : 'bar-r';
+      tableRows += `<tr>
+        <td style="max-width:220px;font-size:13px">${lec}</td>
+        <td style="text-align:center;font-size:12px">${d.total}</td>
+        <td style="text-align:center;font-size:12px">${d.answered}</td>
+        <td style="text-align:center"><span class="lost-badge ${lost>0?'lost-bad':'lost-ok'}">${lost||'–'}</span></td>
+        <td style="min-width:110px">
+          ${p !== null ? `<div class="bar-cell"><div class="bar-bg"><div class="bar-fill ${barCls}" style="width:${p}%"></div></div><span class="pct-label">${p}%</span></div>` : '<span style="font-size:12px;color:var(--text3)">–</span>'}
+        </td>
+      </tr>`;
+    });
+  }
 
   document.getElementById('resContent').innerHTML = `
     <div class="result-banner ${bannerCls}">
@@ -1942,7 +2018,9 @@ function showHistory() {
   let html = '';
   Object.entries(grouped).forEach(([bid, attempts]) => {
     const b = BLOCKS[bid];
-    html += `<h3 style="margin:1.2rem 0 0.5rem;font-size:14px;color:${b.color}">${b.name}</h3>`;
+    const blockName = b ? b.name : 'All Blocks';
+    const blockColor = b ? b.color : '#888';
+    html += `<h3 style="margin:1.2rem 0 0.5rem;font-size:14px;color:${blockColor}">${blockName}</h3>`;
 
     // Trend chart
     const scores = attempts.map(a => a.pct);
@@ -2038,6 +2116,19 @@ function showAllStats() {
     };
     tabs.appendChild(t);
   });
+
+  // All Random tab
+  const arTab = document.createElement('button');
+  arTab.className = 'tab';
+  arTab.textContent = 'All Random';
+  arTab.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+    arTab.classList.add('on');
+    statsPeriod = 'all';
+    renderAllRandomStats();
+  };
+  tabs.appendChild(arTab);
+
   renderStats(firstId);
 }
 
@@ -2219,6 +2310,135 @@ function renderStats(blockId, period) {
         plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.x + '%' } } }
       }
     });
+  }
+}
+
+function renderAllRandomStats(period) {
+  if (period !== undefined) statsPeriod = period;
+  const p = statsPeriod;
+
+  const attempts = filterAttemptsByTime(
+    allAttempts.filter(a => a.blockId === 'all'), p
+  ).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  const topicStats = computeTopicStats(attempts);
+  const recs = generateRecommendations(topicStats, attempts);
+  const avgScore  = attempts.length ? Math.round(attempts.reduce((acc, a) => acc + a.pct, 0) / attempts.length) : null;
+  const bestScore = attempts.length ? Math.max(...attempts.map(a => a.pct)) : null;
+  const totalQsAnswered = attempts.reduce((acc, a) => acc + a.answered, 0);
+  const weakest = topicStats.length ? topicStats[0].name : '\u2014';
+
+  let attemptRows = '';
+  [...attempts].reverse().forEach(a => {
+    const pillCls = a.pct >= 70 ? 'bar-g' : a.pct >= 50 ? 'bar-a' : 'bar-r';
+    attemptRows += '<tr>' +
+      '<td>' + new Date(a.date).toLocaleDateString() + '</td>' +
+      '<td><span class="pill ' + pillCls + '">' + a.pct + '%</span></td>' +
+      '<td>' + a.correct + '/' + a.answered + '</td>' +
+      '<td>' + a.total + ' Qs</td>' +
+      '</tr>';
+  });
+
+  // Build topic breakdown rows (grouped by lecture, sorted by accuracy)
+  let topicRows = '';
+  topicStats.forEach(t => {
+    const lost = t.answered - t.correct;
+    const barCls = t.pct >= 70 ? 'bar-g' : t.pct >= 50 ? 'bar-a' : 'bar-r';
+    topicRows += '<tr>' +
+      '<td style="font-size:13px;max-width:220px">' + t.name + '</td>' +
+      '<td style="text-align:center;font-size:12px">' + t.answered + '</td>' +
+      '<td style="text-align:center"><span class="lost-badge ' + (lost > 0 ? 'lost-bad' : 'lost-ok') + '">' + (lost || '\u2013') + '</span></td>' +
+      '<td style="min-width:110px"><div class="bar-cell"><div class="bar-bg"><div class="bar-fill ' + barCls + '" style="width:' + t.pct + '%"></div></div><span class="pct-label">' + t.pct + '%</span></div></td>' +
+      '</tr>';
+  });
+
+  document.getElementById('sContent').innerHTML =
+    // Time filters
+    '<div class="time-filters">' +
+      ['7d', '30d', 'all'].map(pv =>
+        '<button class="tf-btn' + (p === pv ? ' active' : '') + '" onclick="renderAllRandomStats(\'' + pv + '\')">' +
+        (pv === 'all' ? 'All time' : pv) + '</button>'
+      ).join('') +
+    '</div>' +
+
+    '<div class="stat-grid">' +
+      '<div class="scard"><div class="n">' + (avgScore !== null ? avgScore + '%' : '\u2013') + '</div><div class="l">Avg Score</div></div>' +
+      '<div class="scard"><div class="n">' + (bestScore !== null ? bestScore + '%' : '\u2013') + '</div><div class="l">Best Score</div></div>' +
+      '<div class="scard"><div class="n">' + attempts.length + '</div><div class="l">Attempts</div></div>' +
+      '<div class="scard"><div class="n">' + totalQsAnswered + '</div><div class="l">Qs Answered</div></div>' +
+    '</div>' +
+
+    (attempts.length > 0
+      ? '<div class="chart-section"><h3>Score Trend</h3><canvas id="trendChart" height="120"></canvas></div>' +
+        (topicStats.length > 0 ? '<div class="chart-section"><h3>Topic Accuracy</h3><canvas id="topicChart" height="' + Math.max(topicStats.length * 30, 120) + '"></canvas></div>' : '')
+      : '<div class="chart-section" style="color:var(--ink-dim);font-size:14px;padding:1.25rem">Complete some All Random attempts to see charts here.</div>'
+    ) +
+
+    '<div class="recs-panel"><h3>Recommendations</h3><ul>' +
+      recs.map(r => '<li>' + r + '</li>').join('') +
+    '</ul></div>' +
+
+    (attempts.length > 0
+      ? '<div class="chart-section"><h3>Individual Attempts</h3>' +
+        '<div style="overflow-x:auto"><table class="htable">' +
+        '<thead><tr><th>Date</th><th>Score</th><th>Correct</th><th>Size</th></tr></thead>' +
+        '<tbody>' + attemptRows + '</tbody></table></div></div>'
+      : ''
+    ) +
+
+    (topicStats.length > 0
+      ? '<div class="chart-section"><h3>Topic Breakdown</h3>' +
+        '<p style="font-size:13px;color:var(--ink-dim);margin:0 0 0.75rem">Accuracy across all lectures seen in All Random mode — sorted lowest first:</p>' +
+        '<div style="overflow-x:auto"><table class="ltable">' +
+        '<thead><tr><th>Lecture</th><th>Attempted</th><th>Marks lost</th><th>Score</th></tr></thead>' +
+        '<tbody>' + topicRows + '</tbody></table></div></div>'
+      : ''
+    );
+
+  if (attempts.length > 0) {
+    if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
+    if (topicChartInstance) { topicChartInstance.destroy(); topicChartInstance = null; }
+
+    trendChartInstance = new Chart(document.getElementById('trendChart'), {
+      type: 'line',
+      data: {
+        labels: attempts.map(a => new Date(a.date).toLocaleDateString()),
+        datasets: [{
+          label: 'Score %',
+          data: attempts.map(a => a.pct),
+          borderColor: '#6366f1',
+          backgroundColor: 'rgba(99,102,241,0.1)',
+          tension: 0.3,
+          fill: true,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { min: 0, max: 100, ticks: { callback: v => v + '%' } } },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y + '%' } } }
+      }
+    });
+
+    if (topicStats.length > 0) {
+      topicChartInstance = new Chart(document.getElementById('topicChart'), {
+        type: 'bar',
+        data: {
+          labels: topicStats.map(t => t.name),
+          datasets: [{
+            data: topicStats.map(t => t.pct),
+            backgroundColor: topicStats.map(t => t.pct >= 70 ? '#22c55e' : t.pct >= 50 ? '#f59e0b' : '#ef4444')
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          scales: { x: { min: 0, max: 100, ticks: { callback: v => v + '%' } } },
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.x + '%' } } }
+        }
+      });
+    }
   }
 }
 
