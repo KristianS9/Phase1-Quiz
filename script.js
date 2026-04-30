@@ -1744,8 +1744,7 @@ function renderQ() {
     </div>`;
   }
 
-  const _src = isUserQuestion(q) ? 'From WMS / Student SEM'
-             : (q[3]||'').includes('From your Notion') || (q[3]||'').includes('From the CTB') ? 'From Notion'
+  const _src = (q[3]||'').includes('From your Notion') || (q[3]||'').includes('From the CTB') ? 'From Notion'
              : 'AI-generated';
   const _fKey = (state.attemptId||'x') + '_' + state.currentQ;
   const _flagged = state.flagged && state.flagged[_fKey];
