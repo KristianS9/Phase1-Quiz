@@ -1361,10 +1361,6 @@ function openReport(qIdx, src) {
   if (!item) return;
   _rQIdx = qIdx; _rSrc = src;
   document.getElementById('rdQuestion').textContent = item.q[0];
-  document.querySelectorAll('input[name="rdR"]').forEach(r => r.checked = false);
-  document.querySelectorAll('.reason-opt').forEach(o => o.classList.remove('selected'));
-  document.getElementById('rdExtra').value = '';
-  document.getElementById('rdBody').innerHTML = document.getElementById('rdBody').innerHTML; // noop refresh
   // Re-render body fully
   document.getElementById('rdBody').innerHTML = `
     <span class="rd-label">What is the issue?</span>
