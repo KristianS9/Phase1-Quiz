@@ -33,7 +33,7 @@ function submitGate() {
   .then(r => r.json())
   .then(data => {
     if (data.ok) {
-      localStorage.setItem('quiz_email_verified', '1');
+      localStorage.setItem('quiz_email_verified', email);
       const gate = document.getElementById('emailGate');
       gate.classList.add('fade-out');
       setTimeout(() => { gate.style.display = 'none'; }, 500);
@@ -1375,7 +1375,7 @@ function openReport(qIdx, src) {
       <label class="reason-opt"><input type="radio" name="rdR" value="Poor distractor quality"> Poor distractor quality</label>
       <label class="reason-opt"><input type="radio" name="rdR" value="Other"> Other</label>
     </div>
-    <span class="rd-label">Additional detail <span style="opacity:0.5">(optional)</span></span>
+    <span class="rd-label">Your reasoning <span style="color:var(--bad)">*</span></span>
     <textarea class="report-extra" id="rdExtra" placeholder="e.g. The correct answer should be B because..."></textarea>
     <div class="report-footer">
       <button class="btn" onclick="closeReport()">Cancel</button>
@@ -1402,7 +1402,11 @@ async function submitReport() {
     return;
   }
   const extra = (document.getElementById('rdExtra') || {}).value || '';
-  const reason = rEl.value + (extra.trim() ? ' — ' + extra.trim() : '');
+  if (!extra.trim()) {
+    document.getElementById('rdExtra').style.borderColor = 'rgba(255,107,122,0.6)';
+    return;
+  }
+  const reason = rEl.value + ' — ' + extra.trim();
   const item = state.questions[_rQIdx];
   if (!item) { closeReport(); return; }
 
@@ -1413,11 +1417,14 @@ async function submitReport() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        question: item.q[0].substring(0, 200),
+        question: item.q[0],
+        options:  item.q[1],
+        correct:  item.q[2],
         source:   _rSrc || '',
         lecture:  item.lecture   || '',
         block:    item.blockName || '',
         reason:   reason.substring(0, 500),
+        email:    localStorage.getItem('quiz_email_verified') || '',
       }),
     });
     if (!resp.ok) throw new Error('server error');

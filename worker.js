@@ -25,7 +25,7 @@ export default {
       let body;
       try { body = await request.json(); } catch { return json({ error: 'bad_request' }, 400); }
 
-      const { question, source, lecture, block, reason } = body;
+      const { question, options, correct, source, lecture, block, reason, email } = body;
       if (!reason) return json({ error: 'reason_required' }, 400);
 
       if (!env.NOTION_TOKEN) return json({ error: 'no_token' }, 500);
@@ -34,13 +34,7 @@ export default {
       const baseReason = (reason || '').split(' — ')[0].trim();
       const issueType = ISSUE_TYPE_MAP[baseReason] || 'Other';
 
-      // Build a description combining all context
-      const parts = [];
-      if (lecture) parts.push(`Lecture: ${lecture}`);
-      if (block)   parts.push(`Block: ${block}`);
-      if (source)  parts.push(`Source: ${source}`);
-      if (reason)  parts.push(`Report: ${reason}`);
-      const description = parts.join('\n');
+      const context = [lecture, block, source].filter(Boolean).join(' · ');
 
       const notionResp = await fetch('https://api.notion.com/v1/pages', {
         method: 'POST',
@@ -52,12 +46,23 @@ export default {
         body: JSON.stringify({
           parent: { database_id: NOTION_DB_ID },
           properties: {
-            Name:          { title: [{ text: { content: (question || '').substring(0, 200) } }] },
-            'Issue Type':  { select: { name: issueType } },
-            Description:   { rich_text: [{ text: { content: description.substring(0, 500) } }] },
+            Name:            { title: [{ text: { content: (question || '').substring(0, 200) } }] },
+            'Issue Type':    { select: { name: issueType } },
+            Description:     { rich_text: [{ text: { content: (reason || '').substring(0, 500) } }] },
+            'Question ID':   { rich_text: [{ text: { content: context.substring(0, 200) } }] },
             'Date Reported': { date: { start: new Date().toISOString().split('T')[0] } },
-            Status:        { status: { name: 'New' } },
+            'Reporter Email':{ email: (email && email.includes('@')) ? email : null },
+            Status:          { status: { name: 'New' } },
           },
+          children: [
+            heading('Question'),
+            paragraph(question || ''),
+            heading('Options'),
+            ...(options || []).map((opt, i) => {
+              const letter = 'ABCDE'[i];
+              return paragraph(`${letter}: ${opt}${letter === correct ? '  ✓' : ''}`);
+            }),
+          ],
         }),
       });
 
@@ -79,6 +84,14 @@ function json(body, status) {
     status,
     headers: { 'Content-Type': 'application/json', ...corsHeaders() },
   });
+}
+
+function heading(text) {
+  return { object: 'block', type: 'heading_3', heading_3: { rich_text: [{ type: 'text', text: { content: text } }] } };
+}
+
+function paragraph(text) {
+  return { object: 'block', type: 'paragraph', paragraph: { rich_text: [{ type: 'text', text: { content: String(text) } }] } };
 }
 
 function corsHeaders() {
