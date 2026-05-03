@@ -34,13 +34,7 @@ export default {
       const baseReason = (reason || '').split(' — ')[0].trim();
       const issueType = ISSUE_TYPE_MAP[baseReason] || 'Other';
 
-      // Build a description combining all context
-      const parts = [];
-      if (lecture) parts.push(`Lecture: ${lecture}`);
-      if (block)   parts.push(`Block: ${block}`);
-      if (source)  parts.push(`Source: ${source}`);
-      if (reason)  parts.push(`Report: ${reason}`);
-      const description = parts.join('\n');
+      const context = [lecture, block, source].filter(Boolean).join(' · ');
 
       const notionResp = await fetch('https://api.notion.com/v1/pages', {
         method: 'POST',
@@ -54,7 +48,8 @@ export default {
           properties: {
             Name:          { title: [{ text: { content: (question || '').substring(0, 200) } }] },
             'Issue Type':  { select: { name: issueType } },
-            Description:   { rich_text: [{ text: { content: description.substring(0, 500) } }] },
+            Description:   { rich_text: [{ text: { content: (reason || '').substring(0, 500) } }] },
+            'Question ID': { rich_text: [{ text: { content: context.substring(0, 200) } }] },
             'Date Reported': { date: { start: new Date().toISOString().split('T')[0] } },
             Status:        { status: { name: 'New' } },
           },
