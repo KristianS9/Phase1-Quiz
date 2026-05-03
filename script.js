@@ -1407,28 +1407,18 @@ async function submitReport() {
   document.getElementById('rdBody').innerHTML = '<div class="report-msg" style="color:var(--ink-dim)">Submitting…</div>';
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch('https://fidus.kristian-s.workers.dev/api/report', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 256,
-        system: 'You are a Notion API helper. Call the Notion MCP notion-create-pages tool with the provided payload and return exactly the string "DONE".',
-        messages: [{ role: 'user', content: JSON.stringify({
-          action: 'notion_create_page',
-          data_source_id: REPORT_DS_ID,
-          properties: {
-            Question: item.q[0].substring(0, 200),
-            Source: _rSrc,
-            Lecture: item.lecture || '',
-            Block: item.blockName || '',
-            Reason: reason.substring(0, 500),
-            Status: 'New'
-          }
-        }) }],
-        mcp_servers: [{ type: 'url', url: 'https://mcp.notion.com/mcp', name: 'notion-mcp' }]
-      })
+        question: item.q[0].substring(0, 200),
+        source:   _rSrc || '',
+        lecture:  item.lecture   || '',
+        block:    item.blockName || '',
+        reason:   reason.substring(0, 500),
+      }),
     });
+    if (!resp.ok) throw new Error('server error');
     // Mark as flagged client-side
     if (!state.flagged) state.flagged = {};
     state.flagged[(state.attemptId||'x') + '_' + _rQIdx] = true;
