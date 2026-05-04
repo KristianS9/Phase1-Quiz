@@ -55,9 +55,11 @@ document.getElementById('gateEmail').addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════════════
 // VERSION & CHANGELOG
 // ═══════════════════════════════════════════════════════════════
-const QUIZ_VERSION = "v23.5";
+const QUIZ_VERSION = "v24.0";
 
 const CHANGELOG = [
+  { version:"v24.0", date:"04 May 2026", summary:"Spaced-repetition random mode — correctly-answered questions deprioritised in future sessions",
+    changes:["Random mode now tracks which questions you answered correctly across sessions (stored locally in your browser)","Correctly-answered questions are placed in a 300-question cooldown queue and deprioritised when building the next random pool — fresh and previously-missed questions are always drawn first","Questions answered incorrectly or skipped are never cooled down, so they continue to reappear until you get them right","This creates a lightweight spaced-repetition loop: the more you practise, the less you see questions you already know","Applies to single-block random mode and All Blocks random mode; sequential (all-in-order) mode is unaffected","Cooldown data is stored locally alongside your scores — nothing is shared"] },
   { version:"v23.5", date:"30 Apr 2026", summary:"All Random mode overhaul — count picker, working summary, separate stats",
     changes:["All Random mode now prompts for question count before starting (presets: 10, 25, 50, 100, All, or custom)","Questions drawn from a blend of all blocks, shuffled fresh each time","Results page now works correctly for all-random attempts, with lecture breakdown grouped by block","All Random stats tracked separately from per-block stats — new 'All Random' tab on the Summary Stats page with trend chart, topic accuracy chart, and recommendations","Per-block rolling stats are kept clean and unaffected by all-random sessions","History page now correctly displays all-random attempts under 'All Blocks'"] },
   { version:"v23.4", date:"29 Apr 2026", summary:"Block 1 distractor quality pass — 65 questions rewritten",
@@ -1439,6 +1441,30 @@ async function submitReport() {
 // ═══════════════════════════════════════════════════════════════
 const RESUME_KEY = 'p1quiz_resume';
 
+// ─── Recency (cooldown) system ────────────────────────────────
+const RECENT_KEY = 'p1quiz_recent';
+const RECENT_MAX = 300;
+
+function loadRecentQ() { return load(RECENT_KEY, []); }
+
+function addRecentQ(items) {
+  const keys = items.map(item => item.blockName + '|' + item.lecture + '|' + item.qIdx);
+  let recent = loadRecentQ().concat(keys);
+  if (recent.length > RECENT_MAX) recent = recent.slice(recent.length - RECENT_MAX);
+  save(RECENT_KEY, recent);
+}
+
+function sortPoolByRecency(pool) {
+  const recentSet = new Set(loadRecentQ());
+  const fresh = [], seen = [];
+  pool.forEach(item => {
+    (recentSet.has(item.blockName + '|' + item.lecture + '|' + item.qIdx) ? seen : fresh).push(item);
+  });
+  fisherYates(fresh);
+  fisherYates(seen);
+  return [...fresh, ...seen];
+}
+
 function saveResume() {
   // Serialise the current in-progress attempt
   // questions array contains objects with {lecture, qIdx, blockName, q:[...]}
@@ -1647,7 +1673,7 @@ function confirmAllRandom() {
   if (!arSelectedCount) return;
   closeArModal();
 
-  const pool = pendingAllRandomPool.slice(0, arSelectedCount).map(item => ({ ...item, q: shuffleAnswers(item.q) }));
+  const pool = sortPoolByRecency(pendingAllRandomPool).slice(0, arSelectedCount).map(item => ({ ...item, q: shuffleAnswers(item.q) }));
 
   state.questions    = pool;
   state.answers      = {};
@@ -1684,7 +1710,7 @@ function startQuiz() {
         qs.forEach((q, idx) => pool.push({lecture: lec, qIdx: idx, q: shuffleAnswers(q), blockName: block.name}));
       });
     });
-    fisherYates(pool);
+    pool = sortPoolByRecency(pool);
     state.isRandom = true;
     state.isAllRandom = true;
   } else {
@@ -1692,8 +1718,7 @@ function startQuiz() {
       b.lectures[lec].forEach((q, idx) => pool.push({lecture: lec, qIdx: idx, q, blockName: b.name}));
     });
     if (mode === 'random') {
-      fisherYates(pool);
-      pool = pool.slice(0, Math.min(numQ, pool.length));
+      pool = sortPoolByRecency(pool).slice(0, Math.min(numQ, pool.length));
       pool = pool.map(item => ({ ...item, q: shuffleAnswers(item.q) }));
       state.isRandom = true;
       state.isAllRandom = false;
@@ -1830,12 +1855,22 @@ function nav(dir) {
   renderQ();
 }
 
+function correctlyAnsweredItems() {
+  return state.questions.filter((item, i) => {
+    const chosen = state.answers[i];
+    if (chosen === undefined) return false;
+    return chosen === ['A','B','C','D','E'].indexOf(item.q[2]);
+  });
+}
+
 function savePartial() {
   // Save whatever was answered so far
+  addRecentQ(correctlyAnsweredItems());
   saveAttemptRecord();
 }
 
 function finishAttempt() {
+  addRecentQ(correctlyAnsweredItems());
   saveAttemptRecord();
   clearResume(); // attempt done — remove resume tile
   showResults();
