@@ -55,9 +55,11 @@ document.getElementById('gateEmail').addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════════════
 // VERSION & CHANGELOG
 // ═══════════════════════════════════════════════════════════════
-const QUIZ_VERSION = "v23.5";
+const QUIZ_VERSION = "v24.0";
 
 const CHANGELOG = [
+  { version:"v24.0", date:"04 May 2026", summary:"Spaced-repetition random mode — correctly-answered questions deprioritised in future sessions",
+    changes:["Random mode now tracks which questions you answered correctly across sessions (stored locally in your browser)","Correctly-answered questions are placed in a 300-question cooldown queue and deprioritised when building the next random pool — fresh and previously-missed questions are always drawn first","Questions answered incorrectly or skipped are never cooled down, so they continue to reappear until you get them right","This creates a lightweight spaced-repetition loop: the more you practise, the less you see questions you already know","Applies to single-block random mode and All Blocks random mode; sequential (all-in-order) mode is unaffected","Cooldown data is stored locally alongside your scores — nothing is shared"] },
   { version:"v23.5", date:"30 Apr 2026", summary:"All Random mode overhaul — count picker, working summary, separate stats",
     changes:["All Random mode now prompts for question count before starting (presets: 10, 25, 50, 100, All, or custom)","Questions drawn from a blend of all blocks, shuffled fresh each time","Results page now works correctly for all-random attempts, with lecture breakdown grouped by block","All Random stats tracked separately from per-block stats — new 'All Random' tab on the Summary Stats page with trend chart, topic accuracy chart, and recommendations","Per-block rolling stats are kept clean and unaffected by all-random sessions","History page now correctly displays all-random attempts under 'All Blocks'"] },
   { version:"v23.4", date:"29 Apr 2026", summary:"Block 1 distractor quality pass — 65 questions rewritten",
