@@ -1439,6 +1439,30 @@ async function submitReport() {
 // ═══════════════════════════════════════════════════════════════
 const RESUME_KEY = 'p1quiz_resume';
 
+// ─── Recency (cooldown) system ────────────────────────────────
+const RECENT_KEY = 'p1quiz_recent';
+const RECENT_MAX = 300;
+
+function loadRecentQ() { return load(RECENT_KEY, []); }
+
+function addRecentQ(items) {
+  const keys = items.map(item => item.blockName + '|' + item.lecture + '|' + item.qIdx);
+  let recent = loadRecentQ().concat(keys);
+  if (recent.length > RECENT_MAX) recent = recent.slice(recent.length - RECENT_MAX);
+  save(RECENT_KEY, recent);
+}
+
+function sortPoolByRecency(pool) {
+  const recentSet = new Set(loadRecentQ());
+  const fresh = [], seen = [];
+  pool.forEach(item => {
+    (recentSet.has(item.blockName + '|' + item.lecture + '|' + item.qIdx) ? seen : fresh).push(item);
+  });
+  fisherYates(fresh);
+  fisherYates(seen);
+  return [...fresh, ...seen];
+}
+
 function saveResume() {
   // Serialise the current in-progress attempt
   // questions array contains objects with {lecture, qIdx, blockName, q:[...]}
@@ -1647,7 +1671,7 @@ function confirmAllRandom() {
   if (!arSelectedCount) return;
   closeArModal();
 
-  const pool = pendingAllRandomPool.slice(0, arSelectedCount).map(item => ({ ...item, q: shuffleAnswers(item.q) }));
+  const pool = sortPoolByRecency(pendingAllRandomPool).slice(0, arSelectedCount).map(item => ({ ...item, q: shuffleAnswers(item.q) }));
 
   state.questions    = pool;
   state.answers      = {};
@@ -1684,7 +1708,7 @@ function startQuiz() {
         qs.forEach((q, idx) => pool.push({lecture: lec, qIdx: idx, q: shuffleAnswers(q), blockName: block.name}));
       });
     });
-    fisherYates(pool);
+    pool = sortPoolByRecency(pool);
     state.isRandom = true;
     state.isAllRandom = true;
   } else {
@@ -1692,8 +1716,7 @@ function startQuiz() {
       b.lectures[lec].forEach((q, idx) => pool.push({lecture: lec, qIdx: idx, q, blockName: b.name}));
     });
     if (mode === 'random') {
-      fisherYates(pool);
-      pool = pool.slice(0, Math.min(numQ, pool.length));
+      pool = sortPoolByRecency(pool).slice(0, Math.min(numQ, pool.length));
       pool = pool.map(item => ({ ...item, q: shuffleAnswers(item.q) }));
       state.isRandom = true;
       state.isAllRandom = false;
@@ -1830,12 +1853,22 @@ function nav(dir) {
   renderQ();
 }
 
+function correctlyAnsweredItems() {
+  return state.questions.filter((item, i) => {
+    const chosen = state.answers[i];
+    if (chosen === undefined) return false;
+    return chosen === ['A','B','C','D','E'].indexOf(item.q[2]);
+  });
+}
+
 function savePartial() {
   // Save whatever was answered so far
+  addRecentQ(correctlyAnsweredItems());
   saveAttemptRecord();
 }
 
 function finishAttempt() {
+  addRecentQ(correctlyAnsweredItems());
   saveAttemptRecord();
   clearResume(); // attempt done — remove resume tile
   showResults();
