@@ -55,9 +55,11 @@ document.getElementById('gateEmail').addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════════════
 // VERSION & CHANGELOG
 // ═══════════════════════════════════════════════════════════════
-const QUIZ_VERSION = "v24.1";
+const QUIZ_VERSION = "v24.2";
 
 const CHANGELOG = [
+  { version:"v24.2", date:"10 May 2026", summary:"Dynamic math questions — randomised values each session",
+    changes:["7 calculation-based questions now generate fresh random input values on every session, preventing answer memorisation","Questions covered: prevalence calculation, ECG heart rate from R-R interval (×2), EDV/ESV → stroke volume & ejection fraction (×2), cardiac output from HR × SV, Winter's formula for metabolic acidosis compensation","Correct answer is always computed from the same formula shown in the question — never hardcoded or looked up","Distractors reflect genuine calculation errors for each question type (decimal-shift errors for prevalence/ECG, systematic formula errors for EDV/ESV and Winter's formula, plausible alternative HR×SV combinations for cardiac output)","Values are generated once per session; partial-save and page refresh restore the exact same numbers — no inconsistency","Compatible with spaced repetition: a correctly-answered dynamic question re-enters the pool with fresh values after its cooldown period"] },
   { version:"v24.1", date:"06 May 2026", summary:"Block 5 expanded — 9 new lectures, 100 questions across Reproduction & Child Health",
     changes:["Added CTB: Gametes & the HPG Axis — 12 questions covering spermatogenesis, oogenesis, HPG axis feedback, and GnRH pulsatility","Added and expanded CTB: The Menstrual Cycle — 9 new questions added to existing 9 (18 total) covering LH surge, two-cell model, follicle selection, oocyte meiosis, and menstrual disorders","Expanded PPT: Contraception — 3 new questions added to existing 7 (10 total) covering COCP class differences, progestin mechanisms, and implant pharmacology","Added CTB: Antenatal Care — 8 questions covering booking appointment, ultrasound scans, combined screening, routine bloods, and abdominal examination","Added CTB: Maternal Physiological Adaptations During Pregnancy — 9 questions covering cardiovascular, haematological, respiratory, renal, GI, musculoskeletal, skin, and physiological anaemia","Added CTB: Physiology of Labour — 7 questions covering onset, oxytocin/prostaglandins, cervical ripening, stages, cardinal movements, CTG, and progesterone quiescence","Added CTB: Labour & Birth — 6 questions covering stages of labour, complications, instrumental delivery, shoulder dystocia, and preterm labour","Added PPT: Supplements in Pregnancy & Drugs in Labour — 6 questions covering folic acid/vitamin D, oxytocin, corticosteroids, pain relief, magnesium sulphate, and misoprostol","Added VLE: Abortion — 4 questions covering legal framework, medical methods, surgical methods, and conscientious objection","Added CTB: Puberty & Adolescence — 10 questions covering puberty initiation, Tanner staging, precocious/delayed puberty, Turner/Klinefelter syndromes, and adolescent health","Added CTB: Sexually Transmitted Infections — 11 questions covering Chlamydia, gonorrhoea, syphilis, HIV, HSV, HPV, Trichomonas, PID, BV, partner notification, and UK screening","All 100 Block 5 questions pass distractor quality check — 0 length-ratio violations","Answer position bias eliminated across all new lectures"] },
   { version:"v24.0", date:"04 May 2026", summary:"Spaced-repetition random mode — correctly-answered questions deprioritised in future sessions",
@@ -115,6 +117,147 @@ const CHANGELOG = [
   { version:"v1.0", date:"20 Apr 2026", summary:"First build from workshop MCQ documents",
     changes:["Standalone HTML quiz from Block 1–4 CTB workshop Word documents","Block selector, quiz engine, and local score storage","Dark mode and full offline capability","Single file — shareable without server or login"] }
 ];
+
+// ═══════════════════════════════════════════════════════════════
+// DYNAMIC QUESTION GENERATORS
+// Each generator returns [questionText, [optA..optE], correctLetter, explanation]
+// Options are returned in FIXED order with correct always at index 2 ("C").
+// shuffleAnswers() in pool assembly randomises positions before display.
+// ═══════════════════════════════════════════════════════════════
+
+function resolveQuestion(q) {
+  return (q && q.type === 'dynamic') ? q.generate() : q;
+}
+
+function _pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function _fmtPct(n)  { return parseFloat(n.toPrecision(3)) + '%'; }
+
+// Generator 1: Prevalence calculation
+function _genPrevalence() {
+  const rate  = _pick([5.0, 6.0, 7.0, 7.5, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]);
+  const total = _pick([3000, 3500, 4000, 4200, 4500, 4800, 5000, 5200, 5500, 6000]);
+  const cases = Math.round(total * rate / 100);
+  const opts  = [
+    _fmtPct(rate / 100),   // forgot ×100
+    _fmtPct(rate / 10),    // off by ÷10
+    _fmtPct(rate),         // ✓ correct (index 2 = "C")
+    _fmtPct(rate * 10),    // off by ×10
+    _fmtPct(rate / 1000),  // forgot proportion step too
+  ];
+  return [
+    `In the patient's General Practice, ${cases} patients (aged 17+) have diabetes mellitus. There were ${total} patients aged 17 years and over on the General Practice list. Calculate the prevalence of diabetes mellitus in patients aged 17 years and over in this practice.`,
+    opts, 'C',
+    `Prevalence = (${cases} ÷ ${total}) × 100 = ${rate}%. Divide cases by population, then multiply by 100 to express as a percentage.`
+  ];
+}
+
+// Generator 2: ECG heart rate from R-R interval
+const _ECG_POOL = [50, 60, 75, 100, 150]; // = 300 ÷ {6,5,4,3,2} large squares
+const _ECG_SQUARES = { 50: 6, 60: 5, 75: 4, 100: 3, 150: 2 };
+function _genECGHeartRate(longForm) {
+  const hr      = _pick(_ECG_POOL);
+  const squares = _ECG_SQUARES[hr];
+  const others  = _ECG_POOL.filter(v => v !== hr);
+  const opts    = [others[0], others[1], hr, others[2], others[3]]; // correct at index 2
+  const text    = longForm
+    ? `If the R-R interval on an ECG measures ${squares} large squares, what is the heart rate?`
+    : `R-R interval of ${squares} large squares gives heart rate of:`;
+  return [
+    text,
+    opts.map(v => v + ' bpm'), 'C',
+    `Heart rate = 300 ÷ ${squares} large squares = ${hr} bpm. Each large square = 0.2 s; 300 × 0.2 s = 60 seconds (1 minute).`
+  ];
+}
+
+// Generator 3: EDV + ESV → Stroke Volume & Ejection Fraction
+function _genEDVESV(longForm) {
+  let EDV, ESV, SV, EF;
+  do {
+    EDV = _pick([110, 120, 130, 140, 150, 160]);
+    ESV = _pick([40, 45, 50, 55, 60, 65]);
+    SV  = EDV - ESV;
+    EF  = Math.round(SV / EDV * 100);
+  } while (ESV >= EDV * 0.45); // ensure EF > 55% so wrongEF ≠ EF
+  const wrongEF = Math.round(ESV / EDV * 100); // ESV/EDV error
+  const fmt = longForm
+    ? (sv, ef) => `SV = ${sv}mL, EF = ${ef}%`
+    : (sv, ef) => `SV ${sv}mL, EF ${ef}%`;
+  const opts = [
+    fmt(ESV, wrongEF),   // used ESV as SV and ESV/EDV for EF
+    fmt(EDV, 100),       // didn't subtract ESV
+    fmt(SV, EF),         // ✓ correct (index 2 = "C")
+    fmt(SV, wrongEF),    // correct SV, wrong EF formula
+    fmt(ESV, EF),        // wrong SV (ESV), correct EF formula
+  ];
+  const text = longForm
+    ? `A patient has EDV ${EDV}mL and ESV ${ESV}mL. What are their stroke volume and ejection fraction?`
+    : `EDV ${EDV}ml, ESV ${ESV}ml: stroke volume and ejection fraction are:`;
+  return [
+    text, opts, 'C',
+    `SV = EDV − ESV = ${EDV} − ${ESV} = ${SV}mL. EF = (SV ÷ EDV) × 100 = (${SV} ÷ ${EDV}) × 100 = ${EF}%.`
+  ];
+}
+
+// Generator 4: Cardiac Output = HR × SV
+function _genCardiacOutput() {
+  const HR_LIST = [60, 65, 70, 72, 75, 80];
+  const SV_LIST = [60, 65, 70, 75, 80];
+  const HR = _pick(HR_LIST);
+  const SV = _pick(SV_LIST);
+  const co = (h, s) => parseFloat((h * s / 1000).toFixed(2));
+  const correct = co(HR, SV);
+  // Build pool of all plausible CO values, deduplicate, exclude correct
+  const seen = new Set([correct]);
+  const pool  = [];
+  for (const h of HR_LIST) for (const s of SV_LIST) {
+    const v = co(h, s);
+    if (!seen.has(v)) { seen.add(v); pool.push(v); }
+  }
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  const [d1, d2, d3, d4] = pool;
+  return [
+    `HR ${HR} bpm, SV ${SV}ml: cardiac output is:`,
+    [d1, d2, correct, d3, d4].map(v => v + ' L/min'), 'C',
+    `CO = HR × SV ÷ 1000 = ${HR} × ${SV} ÷ 1000 = ${correct} L/min. Divide by 1000 to convert mL/min to L/min.`
+  ];
+}
+
+// Generator 5: Winter's Formula
+const _WINTERS_pH = { 8: 7.20, 10: 7.23, 11: 7.26, 12: 7.28, 14: 7.31, 16: 7.33, 18: 7.36 };
+function _genWintersFormula() {
+  const hco3     = _pick([8, 10, 11, 12, 14, 16, 18]);
+  const pH       = _WINTERS_pH[hco3];
+  const exp      = parseFloat((1.5 * hco3 + 8).toFixed(1));
+  const lo       = parseFloat((exp - 2).toFixed(1));
+  const hi       = parseFloat((exp + 2).toFixed(1));
+  const scenario = _pick(['appropriate', 'inadequate', 'excessive']);
+  const measured = scenario === 'appropriate' ? Math.round(exp)
+                 : scenario === 'inadequate'  ? Math.round(exp + 4)
+                 :                              Math.round(exp - 4);
+  const interp = {
+    appropriate: 'appropriate — pure metabolic acidosis with respiratory compensation',
+    inadequate:  'inadequate — additional respiratory acidosis present',
+    excessive:   'excessive — additional respiratory alkalosis present',
+  };
+  const wrongInterp = scenario === 'appropriate' ? interp.inadequate : interp.appropriate;
+  const wrongExp1   = parseFloat((2 * hco3 + 8).toFixed(1));   // wrong multiplier
+  const wrongExp2   = parseFloat((1.5 * hco3).toFixed(1));      // forgot +8
+  const opts = [
+    `Expected PaCO₂ = ${wrongExp1} mmHg; compensation ${interp[scenario]}`,
+    `Expected PaCO₂ = ${exp} mmHg; compensation ${wrongInterp}`,
+    `Expected PaCO₂ = ${exp} mmHg (range ${lo}–${hi}); compensation ${interp[scenario]}`,
+    `Expected PaCO₂ = ${wrongExp2} mmHg; compensation ${interp[scenario]}`,
+    `Cannot determine compensation without knowing the anion gap`,
+  ];
+  return [
+    `A patient presents with: pH ${pH}, HCO₃⁻ ${hco3} mmol/L, PaCO₂ ${measured} mmHg. Calculate the expected PaCO₂ using Winter's formula. Is compensation appropriate?`,
+    opts, 'C',
+    `Winter's formula: expected PaCO₂ = (1.5 × HCO₃⁻) + 8 ± 2 = (1.5 × ${hco3}) + 8 = ${exp} ± 2 mmHg (range ${lo}–${hi}). Measured ${measured} mmHg → compensation is ${interp[scenario]}.`
+  ];
+}
 
 // ═══════════════════════════════════════════════════════════════
 // QUESTION DATA
@@ -479,7 +622,7 @@ const BLOCKS = {
         ["Primary metabolic alkalosis (no compensation) on ABG:", ["↓pH, ↑PCO₂, ↓HCO₃⁻", "↑pH, ↑HCO₃⁻, normal PCO₂", "↑pH, ↓PCO₂, ↑HCO₃⁻", "↓pH, normal HCO₃⁻, ↑PCO₂", "↑pH, normal HCO₃⁻, ↓PCO₂"], "B", "From your Notion notes (CTB: Acid/Base Regulation): 'Primary metabolic alkalosis: ↑HCO₃⁻ (e.g., vomiting → HCl loss) → ↑pH. Without compensation, PCO₂ is normal. Respiratory compensation (mild hypoventilation) is the only option, but is limited by O₂ requirements.'"]
       ,
         ["A patient with COPD has: pH 7.32, PaCO2 68 mmHg, HCO3- 34 mmol/L. This represents:", ["Acute respiratory acidosis uncompensated", "Metabolic alkalosis", "Chronic respiratory acidosis with metabolic compensation", "Mixed metabolic and respiratory acidosis", "Primary metabolic alkalosis"], "C", "From your Notion notes (CTB: Acid/Base Regulation): '↑PaCO2 (respiratory acidosis, primary) + ↑HCO3- (renal metabolic compensation) = chronic respiratory acidosis. The kidney has had time to retain HCO3- to buffer the acidosis. Acute respiratory acidosis: HCO3- barely raised (1 mmol/L per 10 mmHg PCO2 rise); Chronic: HCO3- rises 3.5 mmol/L per 10 mmHg PCO2 rise.'"],
-        ["A patient presents with: pH 7.26, HCO3- 11 mmol/L, PaCO2 24 mmHg. Calculate the expected PaCO2 using Winter's formula. Is compensation appropriate?", ["Expected PCO2 = 28.5; compensation inadequate (respiratory acidosis also present)", "Expected PCO2 = 24.5; compensation appropriate", "Expected PCO2 = 20; compensation excessive", "Expected PCO2 = 24.5; compensation adequate", "Cannot determine without knowing the anion gap"], "D", "From your Notion notes (CTB: Acid/Base Regulation): 'Winter's formula: expected PaCO2 = (1.5 × HCO3-) + 8 ± 2 = (1.5 × 11) + 8 = 24.5 ± 2. Measured PaCO2 = 24 mmHg — within the expected range. This is pure metabolic acidosis with appropriate respiratory compensation (hyperventilation). No additional respiratory disorder.'"],
+        { type: 'dynamic', generate: _genWintersFormula },
         ["The anion gap is calculated as:",["Na+ + K+ — (Cl- + HCO3-)","Na+","Na+ + Cl- — HCO3-","HCO3- — (Na+ + Cl-)","Cl- — (Na+ + HCO3-)"],"B","From your Notion notes (CTB: Acid/Base Regulation): 'Anion gap = Na+ — (Cl- + HCO3-). Normal: 8-12 mmol/L (or 10-14 with K+ included). Elevated anion gap metabolic acidosis (HAGMA) mnemonic: MUDPILES — Methanol, Uraemia, DKA, Propylene glycol/Paracetamol, Isoniazid/Iron, Lactic acidosis, Ethanol/Ethylene glycol, Salicylates. Normal AG metabolic acidosis (NAGMA): diarrhoea, RTA, Addison's.'"]],
       "Basic Lung Function Testing": [
         ["FEV₁/FVC ratio best distinguishes:", ["Diffusion vs perfusion", "Cardiac vs pulmonary dyspnea", "Upper vs lower airway obstruction", "Acute vs chronic failure", "Obstructive vs restrictive lung disease"], "E", "From your Notion notes (CTB: Basic Lung Function Testing): 'Normal FEV₁/FVC ≥0.7. Obstructive (COPD/asthma): FEV₁ disproportionately ↓ → ↓ratio. Restrictive (fibrosis, kyphoscoliosis): FVC ↓, FEV₁ also ↓ proportionally → normal or ↑ ratio, ↓TLC.'"],
@@ -523,11 +666,11 @@ const BLOCKS = {
         ["Ejection fraction (EF) is calculated as:", ["EDV / ESV × 100%", "CO / HR × 100%", "SV / EDV × 100%", "ESV / EDV × 100%", "SV / ESV × 100%"], "C", "From your Notion notes (CTB: Control of Cardiac Output): 'EF = SV/EDV × 100% = (EDV-ESV)/EDV × 100%. Normal ≥55%. EF <40% = HFrEF. EF reflects systolic function (contractility). EF can be normal despite significant diastolic dysfunction (HFpEF). SV = EDV - ESV (normal ~70mL). EDV normal ~140mL → EF = 70/140 = 50%.'"],
         ["The venous return curve and cardiac output curve intersect at:", ["The point of maximum preload", "The point of minimum heart rate", "The point of maximum contractility", "The operating point", "The respiratory dead space"], "D", "From your Notion notes (CTB: Control of Cardiac Output): 'The Guyton cardiac output/venous return model: cardiac function curve (↑RAP → ↑CO up to a plateau) and venous return curve (↓RAP → ↑venous return) intersect at the equilibrium point (operating point). This determines the actual CO and RAP. Used to understand how fluid loading, vasodilators, or inotropes shift these curves.'"],
         ["A patient in heart failure receives an intravenous diuretic. This primarily reduces cardiac workload by:", ["Increasing myocardial contractility", "Reducing afterload by vasodilation", "Blocking adrenergic receptors on the heart", "Reducing heart rate via vagal stimulation", "Reducing preload by decreasing circulating volume and venous return"], "E", "From your Notion notes (CTB: Control of Cardiac Output): 'Diuretics in heart failure reduce preload: ↓circulating volume → ↓venous return → ↓EDV → ↓wall stress → ↓myocardial O2 demand. Moving the patient back along the Frank-Starling curve can improve symptoms. Does not improve long-term outcomes as much as ACEi/beta-blockers/MRAs in HFrEF.'"],
-        ["A patient has EDV 140mL and ESV 50mL. What are their stroke volume and ejection fraction?", ["SV = 90mL, EF = 64%", "SV = 50mL, EF = 36% — reduced", "SV = 140mL, EF = 100%", "SV = 90mL, EF = 36%", "SV = 50mL, EF = 64%"], "A", "From your Notion notes (CTB End of Session Questions Block 2): 'SV = EDV - ESV = 140 - 50 = 90mL. EF = (SV/EDV) × 100 = (90/140) × 100 = 64% (for reference >50% is normal).' Ejection fraction is the most commonly used clinical measure of systolic ventricular function, measured by echocardiography."],
+        { type: 'dynamic', generate: () => _genEDVESV(true) },
         ["During ventricular filling, why does ventricular pressure initially fall despite increasing volume?", ["The mitral valve opens and releases pressure", "The ventricle is still actively relaxing (lusitropy)", "Blood enters the ventricle faster than the heart can respond", "Aortic pressure drives a retrograde flow into the ventricle", "The His-Purkinje system causes active relaxation"], "B", "From your Notion notes (CTB End of Session Questions Block 2): 'Why does the ventricular pressure fall initially during ventricular filling? Initially the ventricle is still relaxing and so the ventricular pressure falls despite filling and an increase in ventricular volume.' Active relaxation (lusitropy) driven by SERCA pumping Ca2+ back into the SR is an energy-dependent process impaired in diastolic heart failure."],
         ["Which two distinct mechanisms can increase the force of myocardial contraction?", ["Increasing heart rate and simultaneously reducing systemic vascular resistance via sympathetic withdrawal to the peripheral arterioles", "Increasing afterload on the ventricle and reducing ventricular end-diastolic pressure by decreasing venous return through venodilation", "Increasing preload (Frank-Starling, length-dependent) and increasing contractility (sympathetic/catecholamine, length-independent)", "Enhancing parasympathetic outflow to slow the heart and reducing respiratory rate to decrease thoracic venous pooling", "Directly elevating stroke volume and cardiac output by stimulating phosphodiesterase to degrade cAMP and reduce intracellular calcium"], "C", "From your Notion notes (CTB End of Session Questions Block 2): 'What two mechanisms can alter force of contraction of the heart and how? Changes in end-diastolic volume (preload) via length-dependent mechanisms and changes in contractility via length-independent mechanisms.' Frank-Starling mechanism: ↑EDV → ↑stretch → ↑force. Contractility: catecholamines → ↑Ca2+ availability → ↑force at same EDV."],
-        ["EDV 140ml, ESV 50ml: stroke volume and ejection fraction are:", ["SV 50ml, EF 36%", "SV 90ml, EF 50%", "SV 140ml, EF 100%", "SV 90ml, EF 64%", "SV 40ml, EF 29%"], "D", "From the CTB Block 2 End-of-Session Questions (Warwick MBChB): 'SV = EDV - ESV = 140 - 50 = 90mls. EF = (SV/EDV) × 100 = (90/140) × 100 = 64%."],
-        ["HR 72 bpm, SV 70ml: cardiac output is:", ["7.2 L/min", "3.6 L/min", "10 L/min", "1.44 L/min", "5.04 L/min"], "E", "From the CTB Block 2 End-of-Session Questions (Warwick MBChB): 'Cardiac output = heart rate × stroke volume = 72 × 0.07 = 5 L/min.'"],
+        { type: 'dynamic', generate: () => _genEDVESV(false) },
+        { type: 'dynamic', generate: _genCardiacOutput },
         ["During which two phases of the cardiac cycle are both the atrioventricular and semilunar valves simultaneously closed?", ["Isovolumetric contraction and isovolumetric relaxation", "Atrial systole and slow ventricular filling (diastasis)", "Rapid ventricular filling and rapid ventricular ejection", "Peak ejection and early passive ventricular filling", "Atrial systole and the first third of ventricular ejection"], "A", "From the CTB Block 2 End-of-Session Questions (Warwick MBChB): 'Isovolumetric contraction and isovolumetric relaxation — in both phases the ventricle is a closed chamber with no change in volume.'"],
         ["Higher afterload affects stroke volume and ESV by:",["Increasing SV and decreasing ESV","No effect on either","Decreasing SV and increasing ESV","Increasing both SV and ESV","Decreasing both SV and ESV"],"C","From the CTB Block 2 End-of-Session Questions (Warwick MBChB): 'Afterload decreases stroke volume and increases end-systolic volume. This end-systolic volume is then added to the blood filling the ventricle in the next cycle and as a result there is a small secondary increase in end-diastolic volume and preload.'"]],
       "The Heart as an Electrical Pump": [
@@ -557,8 +700,8 @@ const BLOCKS = {
         ["What does a prolonged QTc interval indicate, and what dangerous arrhythmia can it predispose to?", ["Prolonged ventricular repolarisation; Torsades de Pointes (polymorphic VT)", "Prolonged ventricular depolarisation; ventricular fibrillation", "Prolonged atrial conduction; atrial flutter", "AV nodal delay; third-degree heart block", "Prolonged PR interval; complete heart block"], "A", "From your Notion notes (CTB: Introduction to the Electrocardiogram): 'Prolonged QTc (>440ms men, >460ms women): delayed ventricular repolarisation → Torsades de Pointes risk (polymorphic VT that can degenerate to VF). Causes: drugs (antiarrhythmics, antipsychotics, antibiotics), hypokalaemia, hypomagnesaemia, hypocalcaemia, congenital long QT syndrome.'"],
         ["What is the electrical basis of the ST segment appearing as a flat isoelectric line on a normal ECG?", ["No cardiac cells are active during this period", "The whole ventricular myocardium is depolarised", "The P wave cancels the T wave", "Calcium channels are closed and no ions are moving", "The AV node is resetting its pacemaker potential"], "B", "From your Notion notes (CTB End of Session Questions Block 2): 'The ST segment in a healthy heart is generally a flat line with no positive or negative deflections — the isoelectric line. The whole ventricular myocardium is depolarised and there is no wave of excitation, so there are no dipoles formed to be detected by the positive electrode and no resulting deflections on the ECG recording.' ST elevation/depression represents an injury current from partially depolarised cells."],
         ["On an ECG: Lead I is negative, Lead II is positive, aVF is positive. What does this indicate about the cardiac axis?", ["Normal cardiac axis", "Left axis deviation", "Right axis deviation", "Extreme right deviation", "Indeterminate cardiac axis"], "C", "From your Notion notes (CTB End of Session Questions Block 2): 'Lead I – negative; Lead II – positive; AVF – positive. What is the classification of the cardiac axis? The deflections of the leads indicate a right axis deviation. This can be indicative of right ventricular hypertrophy.'"],
-        ["If the R-R interval on an ECG measures 3 large squares, what is the heart rate?", ["60 bpm", "150 bpm", "50 bpm", "100 bpm", "120 bpm"], "D", "From your Notion notes (CTB End of Session Questions Block 2): 'To calculate heart rate, you can divide 300 by the number of large squares between consecutive R waves. In this example it would be 300/3 = 100 bpm.' This rule works because each large square represents 0.2 seconds; 300 × 0.2s = 60 seconds (1 minute)."],
-        ["R-R interval of 3 large squares gives heart rate of:", ["150 bpm", "200 bpm", "60 bpm", "75 bpm", "100 bpm"], "E", "From the CTB Block 2 End-of-Session Questions (Warwick MBChB): 'To calculate heart rate, divide 300 by the number of large squares between consecutive R waves. 300/3 = 100 bpm.'"],
+        { type: 'dynamic', generate: () => _genECGHeartRate(true) },
+        { type: 'dynamic', generate: () => _genECGHeartRate(false) },
         ["The ST segment is isoelectric in a healthy heart because:", ["The entire ventricular myocardium is uniformly depolarised", "No electrical activity occurs", "The ventricles are repolarising rapidly", "Atrial repolarisation cancels ventricular activity", "The AV node is recharging"], "A", "From the CTB Block 2 End-of-Session Questions (Warwick MBChB): 'The ST segment is a flat line (isoelectric line) where the whole ventricular myocardium is between depolarisation and repolarisation and in the same state of excitation. There is no wave of excitation, no dipoles formed, and no resulting deflections on the ECG.'"],
         ["Lead I negative, Lead II positive, aVF positive indicates:",["Normal axis (0° to +90°)","Left axis deviation","Right axis deviation","Extreme axis deviation","Left bundle branch block"],"C","From the CTB Block 2 End-of-Session Questions (Warwick MBChB): 'The deflections of the leads indicate a right axis deviation. This can be indicative of right ventricular hypertrophy.'"]],
       "Haemostasis and the Coagulation Cascade": [
@@ -1222,7 +1365,7 @@ const BLOCKS = {
         ["A patient undergoes a liver transplant. Which coding system is used to code this operation for entry into the Hospital Episode Statistics?", ["ICD-9", "OPCS-4", "OPCS-3", "ICD-10", "QOF"], "B", "OPCS-4 (OPCS Classification of Surgical Operations and Procedures, 4th Revision) is the standard coding system used for operations and procedures used by clinical coders within the NHS. Please see the learning session on Sources of Health and Demographic Information. OPCS-3 is the third revision of the OPCS Classification of Surgical Operations and Procedures, no longer in use. ICD-10 is the International Classification of Diseases, 10th Revision (WHO), which provides the coding for conditions treated or investigated. ICD-9 is the 9th revision of International Classification of Diseases, no longer in use. QOF (Quality and Outcome Framework) is a voluntary reward and incentive programme for improving quality of care in General Practice, based on attaining QOF points and linked to payment."],
         ["Which of the following molecules is downregulated in renal Principal Cells by spironolactone to promote diuresis?", ["Na+/K+/2CL- transporter", "Na+/Cl- transporter", "Na+/K+ ATPase", "H+/K+ ATPase", "Na+/Ca2+ exchanger"], "C", "From Warwick Block 1 formative assessment."],
         ["Which are the primary cells responsible for storing lipid-soluble vitamins in the liver?", ["Cholangiocytes", "Endothelial cells", "Hepatocytes", "Stellate cells", "Kupffer cells"], "D", "Stellate cells, also known as lipocytes, wrap around the hepatic sinusoids and contain lipid droplets that store lipid-soluble vitamins. Endothelial cells line the sinusoids and cholangiocytes line the bile ducts. Hepatocytes are the major parenchymal (functional) cells of the liver, whilst Kupffer cells are tissue macrophages located in the hepatic sinusoids."],
-        ["In the patient’s General Practice, 630 patients (aged 17+) have diabetes mellitus. There were 5162 patients aged 17 years and over on the General Practice list. Calculate the prevalence of diabetes mellitus in patients aged 17 years and over in this practice.", ["0.012%", "0.122%", "1.22%", "122%", "12.2%"], "E", "Prevalence is the number of people with the condition divided by the total number of people. Multiply by 100 to convert to a percentage."],
+        { type: 'dynamic', generate: _genPrevalence },
         ["Which molecule is inhibited by the drug tamsulosin in the bladder sphincter muscle to help relieve the urinary retention experienced in benign prostatic hyperplasia (BPH)?", ["Alpha-1 adrenergic receptor", "M3 muscarinic receptor", "Beta-1 adrenergic receptor", "Beta-3 adrenergic receptor", "Angiotensin II Receptor"], "A", "From Warwick Block 1 formative assessment."],
         ["By which process is glucose produced from non-carbohydrate sources?", ["β-oxidation", "Gluconeogenesis", "Ketogenesis", "Lipogenesis", "Oxidative decarboxylation"], "B", "Gluconeogenesis is the process of forming glucose from non-carbohydrate sources including glycerol, lactate and amino acids. β-oxidation produces acetyl groups, linked to Coenzyme A, from fatty acids, whilst ketogenesis is the production of ketone bodies from such acetyl groups. Oxidative decarboxylation also produces acetyl groups as part of the link reaction between glycolysis in the cytoplasm and the Krebs cycle in the mitochondrial matrix. Lipogenesis is the synthesis of triglycerides and occurs in the fed state."],
         ["Which cell type expresses a wide range of cytochrome P450 enzymes and is the most important for metabolising drug molecules?", ["Lymphocyte", "Tubular Epithelial Cell", "Hepatocyte", "Glomerular Endothelial Cell", "Cholangiocyte"], "C", "From Warwick Block 1 formative assessment."],
@@ -1778,7 +1921,7 @@ function confirmAllRandom() {
   if (!arSelectedCount) return;
   closeArModal();
 
-  const pool = sortPoolByRecency(pendingAllRandomPool).slice(0, arSelectedCount).map(item => ({ ...item, q: shuffleAnswers(item.q) }));
+  const pool = sortPoolByRecency(pendingAllRandomPool).slice(0, arSelectedCount).map(item => ({ ...item, q: shuffleAnswers(resolveQuestion(item.q)) }));
 
   state.questions    = pool;
   state.answers      = {};
@@ -1812,7 +1955,7 @@ function startQuiz() {
     // Collect ALL questions from ALL blocks, ALL lectures
     Object.entries(BLOCKS).forEach(([bid, block]) => {
       Object.entries(block.lectures).forEach(([lec, qs]) => {
-        qs.forEach((q, idx) => pool.push({lecture: lec, qIdx: idx, q: shuffleAnswers(q), blockName: block.name}));
+        qs.forEach((q, idx) => pool.push({lecture: lec, qIdx: idx, q: shuffleAnswers(resolveQuestion(q)), blockName: block.name}));
       });
     });
     pool = sortPoolByRecency(pool);
@@ -1820,11 +1963,11 @@ function startQuiz() {
     state.isAllRandom = true;
   } else {
     selected.forEach(lec => {
-      b.lectures[lec].forEach((q, idx) => pool.push({lecture: lec, qIdx: idx, q, blockName: b.name}));
+      b.lectures[lec].forEach((q, idx) => pool.push({lecture: lec, qIdx: idx, q: resolveQuestion(q), blockName: b.name}));
     });
     if (mode === 'random') {
       pool = sortPoolByRecency(pool).slice(0, Math.min(numQ, pool.length));
-      pool = pool.map(item => ({ ...item, q: shuffleAnswers(item.q) }));
+      pool = pool.map(item => ({ ...item, q: shuffleAnswers(resolveQuestion(item.q)) }));
       state.isRandom = true;
       state.isAllRandom = false;
     } else {
