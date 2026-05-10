@@ -972,3 +972,40 @@ canvas { max-width: 100%; border-radius: var(--radius); }
 .pill.bar-a { background:#f59e0b; }
 .pill.bar-r { background:var(--red,#ef4444); }
 
+/* ── Block 2 Equations ─────────────────────────────────────────── */
+.eq2-btn {
+  display:flex; justify-content:space-between; align-items:center;
+  width:100%; padding:0.9rem 1.1rem; margin:0.75rem 0;
+  background:rgba(74,144,217,0.08); border:1px solid rgba(74,144,217,0.3);
+  border-radius:0.75rem; cursor:pointer; text-align:left;
+  transition:background 0.15s,border-color 0.15s;
+  font-family:"Chakra Petch",sans-serif; color:var(--ink);
+}
+.eq2-btn:hover { background:rgba(74,144,217,0.16); border-color:rgba(74,144,217,0.55); }
+.eq2-btn .arb-title { display:block; font-weight:600; font-size:0.95rem; color:#4A90D9; margin-bottom:0.25rem; }
+.eq2-btn .arb-sub   { display:block; font-size:0.8rem; color:var(--ink-dim); }
+.eq2-btn .arb-icon  { font-size:1.6rem; opacity:0.55; flex-shrink:0; margin-left:0.75rem; }
+.eq-card { background:var(--card); border:1px solid var(--card-border); border-radius:0.65rem; margin-bottom:0.55rem; overflow:hidden; }
+.eq-card-head {
+  display:flex; justify-content:space-between; align-items:center;
+  width:100%; padding:0.75rem 1rem; background:transparent; border:none;
+  cursor:pointer; text-align:left; font-family:"Chakra Petch",sans-serif;
+  border-left:3px solid #4A90D9;
+}
+.eq-card-head:hover { background:rgba(74,144,217,0.06); }
+.eq-name    { font-weight:600; font-size:0.9rem; color:var(--ink); margin-bottom:0.15rem; }
+.eq-formula { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:0.85rem; color:#4A90D9; }
+.eq-chevron { font-size:0.65rem; color:var(--ink-dim); flex-shrink:0; transition:transform 0.2s; margin-left:0.5rem; }
+.eq-card.open .eq-chevron { transform:rotate(90deg); }
+.eq-body { display:none; padding:0.75rem 1rem 0.9rem; border-top:1px solid var(--card-border); }
+.eq-card.open .eq-body { display:block; }
+.eq-vars { margin-bottom:0.6rem; }
+.eq-var-row { display:flex; gap:0.6rem; margin-bottom:0.3rem; font-size:0.83rem; line-height:1.35; }
+.eq-sym  { font-family:"JetBrains Mono",ui-monospace,monospace; color:#4A90D9; white-space:nowrap; min-width:6rem; font-size:0.82rem; }
+.eq-desc { color:var(--ink-dim); }
+.eq-expl { font-size:0.85rem; color:var(--ink); line-height:1.5; margin:0.5rem 0 0.6rem; }
+.eq-session { font-size:0.75rem; color:var(--ink-faint); font-style:italic; }
+.eq-practice-panel { padding:1.5rem 0.5rem; text-align:center; }
+.eq-practice-desc  { color:var(--ink-dim); font-size:0.9rem; line-height:1.55; margin-bottom:1.5rem; }
+.eq-start-btn      { font-size:1rem; padding:0.65rem 2rem; }
+

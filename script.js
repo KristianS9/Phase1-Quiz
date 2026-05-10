@@ -55,9 +55,11 @@ document.getElementById('gateEmail').addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════════════
 // VERSION & CHANGELOG
 // ═══════════════════════════════════════════════════════════════
-const QUIZ_VERSION = "v23.5";
+const QUIZ_VERSION = "v25.0";
 
 const CHANGELOG = [
+  { version:"v25.0", date:"10 May 2026", summary:"Block 2 Equations — study reference + randomised practice questions",
+    changes:["New 'Block 2 Equations' section accessible from the home screen, separate from the standard block grid","Study tab: accordion reference cards for all 20 Block 2 equations — formula, variable definitions, explanation, and associated teaching session","Practice tab: 15 exam-style calculation questions drawn from the Block 2 CTB Equations document","All 13 calculation questions use dynamic generators — values randomised each session so answers cannot be memorised","2 conceptual Fick's Law questions are static","Stats and attempt history tracked in the Summary Stats screen under 'Block 2 Equations' tab","Equations questions excluded from All Questions — Random Order mode"] },
   { version:"v23.5", date:"30 Apr 2026", summary:"All Random mode overhaul — count picker, working summary, separate stats",
     changes:["All Random mode now prompts for question count before starting (presets: 10, 25, 50, 100, All, or custom)","Questions drawn from a blend of all blocks, shuffled fresh each time","Results page now works correctly for all-random attempts, with lecture breakdown grouped by block","All Random stats tracked separately from per-block stats — new 'All Random' tab on the Summary Stats page with trend chart, topic accuracy chart, and recommendations","Per-block rolling stats are kept clean and unaffected by all-random sessions","History page now correctly displays all-random attempts under 'All Blocks'"] },
   { version:"v23.4", date:"29 Apr 2026", summary:"Block 1 distractor quality pass — 65 questions rewritten",
@@ -111,6 +113,378 @@ const CHANGELOG = [
   { version:"v1.0", date:"20 Apr 2026", summary:"First build from workshop MCQ documents",
     changes:["Standalone HTML quiz from Block 1–4 CTB workshop Word documents","Block selector, quiz engine, and local score storage","Dark mode and full offline capability","Single file — shareable without server or login"] }
 ];
+
+// ═══════════════════════════════════════════════════════════════
+// EQUATIONS REFERENCE DATA
+// ═══════════════════════════════════════════════════════════════
+
+const EQUATIONS = [
+  { id:"flow", name:"Flow", formula:"Q = ΔP / R",
+    variables:[{sym:"Q",desc:"Flow — volume of fluid per unit time (mL/s or L/min)"},{sym:"ΔP",desc:"Pressure gradient"},{sym:"R",desc:"Resistance"}],
+    explanation:"Flow is directly proportional to pressure gradient and inversely proportional to resistance. This fundamental relationship underlies cardiac output, vascular resistance, and airway physiology.",
+    session:"Factors Affecting Flow Through Tubes" },
+  { id:"poiseuille", name:"Poiseuille's Law", formula:"R = 8ηl / πr⁴   →   Q = ΔP·πr⁴ / 8ηl",
+    variables:[{sym:"η",desc:"Viscosity of fluid"},{sym:"l",desc:"Length of tube"},{sym:"r",desc:"Radius (note r⁴ — a tiny change in radius has an enormous effect on flow)"},{sym:"ΔP",desc:"Pressure gradient"}],
+    explanation:"Resistance ∝ viscosity × length / r⁴. Halving the radius increases resistance 16-fold and reduces flow 16-fold. This explains why bronchodilation and vasodilation have such powerful effects.",
+    session:"Factors Affecting Flow Through Tubes" },
+  { id:"compliance", name:"Compliance", formula:"C = ΔV / ΔP",
+    variables:[{sym:"C",desc:"Compliance — distensibility (ease of stretch)"},{sym:"ΔV",desc:"Change in volume"},{sym:"ΔP",desc:"Change in transpulmonary or transmural pressure"}],
+    explanation:"Compliance = distensibility; elasticity = resistance to stretch (opposite of compliance). Relevant in lung inflation and the aortic Windkessel effect.",
+    session:"Mechanics of Breathing; Pressures and Flow in the Systemic Circulation" },
+  { id:"laplace", name:"Laplace's Law", formula:"P = 2T / r",
+    variables:[{sym:"P",desc:"Inward collapsing pressure"},{sym:"T",desc:"Surface tension"},{sym:"r",desc:"Radius — smaller alveoli have greater collapsing pressure at constant T"}],
+    explanation:"At constant surface tension, smaller alveoli need more pressure to stay open and would collapse into larger ones. Surfactant preferentially reduces T at low volumes, stabilising small alveoli and increasing compliance.",
+    session:"Mechanics of Breathing" },
+  { id:"hh", name:"Henderson-Hasselbalch", formula:"pH = pKa + log₁₀([HCO₃⁻] / [CO₂])",
+    variables:[{sym:"pH",desc:"Measure of H⁺ concentration"},{sym:"pKa",desc:"Acid dissociation constant for carbonic acid reaction"},{sym:"[HCO₃⁻]",desc:"Bicarbonate — regulated by kidneys (slow)"},{sym:"[CO₂]",desc:"Determined by PaCO₂ — regulated by lungs (fast)"}],
+    explanation:"Derived from CO₂ + H₂O ⇌ H₂CO₃ ⇌ H⁺ + HCO₃⁻. Used to identify acid-base disorders and respiratory/renal compensation.",
+    session:"Gas Transport — CO₂; Acid-Base Regulation; Pathophysiology of Respiratory Failure" },
+  { id:"mv", name:"Minute Ventilation", formula:"MV = VT × RR",
+    variables:[{sym:"MV",desc:"Total air moved per minute (L/min)"},{sym:"VT",desc:"Tidal volume per breath (L or mL)"},{sym:"RR",desc:"Respiratory rate (breaths/min)"}],
+    explanation:"Total airflow into and out of the lungs per minute. Not all of it reaches the alveoli — subtract dead space to get alveolar ventilation.",
+    session:"Ventilation and Perfusion" },
+  { id:"deadspace", name:"Physiological Dead Space", formula:"VD = anatomical DS + alveolar DS",
+    variables:[{sym:"Anatomical DS",desc:"Conducting airways (trachea → terminal bronchioles) ~150 mL"},{sym:"Alveolar DS",desc:"Ventilated alveoli with no perfusion (e.g. PE, high PEEP)"}],
+    explanation:"Air that is ventilated but doesn't participate in gas exchange. Increased alveolar dead space (e.g. pulmonary embolism) increases wasted ventilation.",
+    session:"Ventilation and Perfusion" },
+  { id:"alveolar_vent", name:"Alveolar Ventilation", formula:"VA = (VT − VD) × RR",
+    variables:[{sym:"VA",desc:"Air reaching alveoli per minute (L/min)"},{sym:"VT",desc:"Tidal volume"},{sym:"VD",desc:"Physiological dead space"},{sym:"RR",desc:"Respiratory rate"}],
+    explanation:"Minute ventilation minus wasted dead-space ventilation. VA determines how effectively CO₂ is cleared and O₂ is supplied to alveolar air.",
+    session:"Ventilation and Perfusion" },
+  { id:"fick", name:"Fick's Law of Diffusion", formula:"Rate = (A × D × ΔP) / T",
+    variables:[{sym:"A",desc:"Surface area (↑ = faster)"},{sym:"D",desc:"Diffusion coefficient ∝ solubility / √(molecular weight)"},{sym:"ΔP",desc:"Partial pressure difference across membrane (↑ = faster)"},{sym:"T",desc:"Membrane thickness (↑ = slower)"}],
+    explanation:"Diffusion rate ↑ with surface area, partial pressure gradient, and solubility; ↓ with membrane thickness and molecular weight. Explains how fibrosis, oedema, and emphysema impair gas transfer.",
+    session:"Respiratory Tract Histology and Gas Exchange; Ventilation and Perfusion" },
+  { id:"vent_eqn", name:"Alveolar Ventilation Equation", formula:"PACO₂ = (VCO₂ × K) / VA",
+    variables:[{sym:"PACO₂",desc:"Alveolar (≈ arterial) PaCO₂ (kPa)"},{sym:"VCO₂",desc:"Rate of CO₂ production (L/min)"},{sym:"K",desc:"Constant (temperature, ambient pressure, water vapour)"},{sym:"VA",desc:"Alveolar ventilation — inversely related to PACO₂"}],
+    explanation:"If VCO₂ is constant, PACO₂ ∝ 1/VA. Hypoventilation → ↑PaCO₂; hyperventilation → ↓PaCO₂. If metabolism doubles, ventilation must double to maintain normal PaCO₂.",
+    session:"Ventilation and Perfusion" },
+  { id:"alveolar_gas", name:"Alveolar Gas Equation", formula:"PAO₂ = FiO₂(PB − PSVP_water) − PaCO₂/RQ",
+    variables:[{sym:"PAO₂",desc:"Alveolar PO₂ (kPa)"},{sym:"FiO₂",desc:"Fraction of inspired O₂ (0.21 room air)"},{sym:"PB",desc:"Barometric pressure (101.3 kPa at sea level)"},{sym:"PSVP_water",desc:"Saturated vapour pressure of water at 37°C (6.3 kPa)"},{sym:"PaCO₂",desc:"Arterial PCO₂ (substituted for PACO₂)"},{sym:"RQ",desc:"Respiratory quotient = VCO₂/VO₂ (≈ 0.8)"}],
+    explanation:"First term = PiO₂ (inspired O₂ after humidification); second term = O₂ consumed by metabolism. Key for calculating the A-a gradient.",
+    session:"Pathophysiology of Respiratory Failure" },
+  { id:"aa_gradient", name:"A-a Gradient", formula:"A-a = PAO₂ − PaO₂",
+    variables:[{sym:"PAO₂",desc:"Alveolar PO₂ — calculated from the alveolar gas equation"},{sym:"PaO₂",desc:"Arterial PO₂ — measured from arterial blood gas"}],
+    explanation:"Normal A-a gradient <1.5 kPa in healthy young adults (physiological shunt). Elevated A-a gradient indicates V/Q mismatch, diffusion impairment, or right-to-left shunt.",
+    session:"Pathophysiology of Respiratory Failure" },
+  { id:"o2_content", name:"Oxygen Content Equation", formula:"CaO₂ = (Hb × 1.34 × SaO₂/100) + (PaO₂ × 0.0225)",
+    variables:[{sym:"CaO₂",desc:"Arterial O₂ content (mLO₂/100mL blood)"},{sym:"Hb",desc:"Haemoglobin in g/dL (FBC reports g/L — divide by 10)"},{sym:"1.34",desc:"Hüfner's constant — mL O₂ per gram fully saturated Hb"},{sym:"SaO₂",desc:"Arterial Hb saturation (%)"},{sym:"PaO₂",desc:"Arterial PO₂ (kPa)"},{sym:"0.0225",desc:"O₂ solubility in plasma (mLO₂/100mL per kPa) — tiny contribution"}],
+    explanation:"O₂ is mainly carried bound to Hb; dissolved O₂ is negligible. Anaemia dramatically reduces CaO₂. In V/Q mismatch, high-V/Q areas cannot compensate because Hb is already saturated.",
+    session:"Ventilation and Perfusion; Pathophysiology of Respiratory Failure; Shock" },
+  { id:"o2_delivery", name:"Oxygen Delivery", formula:"O₂ delivery = CO × CaO₂",
+    variables:[{sym:"O₂ delivery",desc:"O₂ delivered to tissues per minute (mL/min)"},{sym:"CO",desc:"Cardiac output (L/min)"},{sym:"CaO₂",desc:"Arterial O₂ content (mLO₂/L — ×10 from the per-100mL value)"}],
+    explanation:"Global O₂ delivery depends on pump function (CO) and O₂-carrying capacity (CaO₂). In cardiogenic shock, CO falls. In anaemia, CaO₂ falls. Both reduce O₂ delivery.",
+    session:"Pathophysiology of Respiratory Failure; Shock" },
+  { id:"fev1_fvc", name:"FEV₁/FVC Ratio", formula:"FEV₁/FVC = FEV₁ / FVC",
+    variables:[{sym:"FEV₁",desc:"Forced expiratory volume in 1 second"},{sym:"FVC",desc:"Forced vital capacity — total volume exhaled after maximal inspiration"}],
+    explanation:"Normal ≈ 0.8 (80%). Reduced (<0.7) in obstructive disease (airflow limitation slows expiration). Normal or increased in restrictive disease (all volumes reduced proportionally).",
+    session:"Basic Lung Function Testing" },
+  { id:"lung_volumes", name:"Lung Volumes and Capacities", formula:"VC = TV+IRV+ERV · IC = TV+IRV · FRC = ERV+RV · TLC = VC+RV",
+    variables:[{sym:"TV",desc:"Tidal volume (~500 mL)"},{sym:"IRV",desc:"Inspiratory reserve volume"},{sym:"ERV",desc:"Expiratory reserve volume"},{sym:"RV",desc:"Residual volume — cannot be measured by spirometry alone"},{sym:"VC",desc:"Vital capacity"},{sym:"FRC",desc:"Functional residual capacity"},{sym:"TLC",desc:"Total lung capacity"}],
+    explanation:"Capacities = sums of 2+ volumes. RV (and thus FRC and TLC) requires body plethysmography or helium dilution — not measurable by spirometry.",
+    session:"Basic Lung Function Testing" },
+  { id:"sv", name:"Stroke Volume", formula:"SV = EDV − ESV",
+    variables:[{sym:"SV",desc:"Blood ejected per ventricular contraction (mL)"},{sym:"EDV",desc:"End-diastolic volume — volume at end of filling (just before contraction)"},{sym:"ESV",desc:"End-systolic volume — volume remaining after contraction"}],
+    explanation:"SV is determined by preload (EDV), afterload (resistance), and contractility. In systolic heart failure, ESV rises and SV falls.",
+    session:"Control of Cardiac Output; Pathophysiology of Heart Failure" },
+  { id:"ef", name:"Ejection Fraction", formula:"EF (%) = (SV / EDV) × 100",
+    variables:[{sym:"EF",desc:"Proportion of EDV ejected per beat (%)"},{sym:"SV",desc:"Stroke volume"},{sym:"EDV",desc:"End-diastolic volume"}],
+    explanation:"Normal EF ≥ 55%. Reduced EF (<40%) = systolic heart failure. EF can be normal with diastolic dysfunction (HFpEF). Measured by echocardiography.",
+    session:"Control of Cardiac Output; Pathophysiology of Heart Failure" },
+  { id:"co", name:"Cardiac Output", formula:"CO = SV × HR",
+    variables:[{sym:"CO",desc:"Blood ejected per minute (L/min) — normal ~5 L/min at rest"},{sym:"SV",desc:"Stroke volume (mL — divide by 1000 to get L)"},{sym:"HR",desc:"Heart rate (beats per minute)"}],
+    explanation:"CO × SVR ≈ MAP. Reduced in cardiogenic shock. Increased in exercise, early sepsis, anaemia. CO = SV × HR ÷ 1000 when SV is in mL.",
+    session:"Control of Cardiac Output" },
+  { id:"map", name:"Mean Arterial Pressure", formula:"MAP = (SBP + 2×DBP) / 3   [physiological: MAP = CO × SVR + CVP]",
+    variables:[{sym:"MAP",desc:"Average BP over one cardiac cycle (mmHg) — target >65 in sepsis"},{sym:"SBP",desc:"Systolic BP (mmHg)"},{sym:"DBP",desc:"Diastolic BP (mmHg) — weighted ×2 as diastole lasts ~2/3 of cycle"},{sym:"CO",desc:"Cardiac output"},{sym:"SVR",desc:"Systemic vascular resistance"},{sym:"CVP",desc:"Central venous pressure (usually ~0, so MAP ≈ CO × SVR)"}],
+    explanation:"DBP is weighted twice because diastole lasts ~⅔ of the cardiac cycle. MAP >65 mmHg is the resuscitation target in sepsis to maintain organ perfusion pressure.",
+    session:"Pressures and Flow in the Systemic Circulation" }
+];
+
+// ═══════════════════════════════════════════════════════════════
+// DYNAMIC QUESTION GENERATORS — Equations Practice
+// Each generator returns [text, [optA..optE], correctLetter, expl]
+// Correct answer is always at index 2 ('C') before shuffleAnswers().
+// ═══════════════════════════════════════════════════════════════
+
+function resolveQuestion(q) {
+  return (q && q.type === 'dynamic') ? q.generate() : q;
+}
+function _pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function _r(n, dp)  { return parseFloat(n.toFixed(dp)); }
+
+// Q1: Poiseuille's Law — calculate flow rate
+function _genEqPoiseuilleFlow() {
+  const cases = [
+    { dp:1.3, r:0.025, l:1.1, eta:2.084e-6, ans:0.087 },
+    { dp:2.6, r:0.025, l:1.1, eta:2.084e-6, ans:0.174 },
+    { dp:1.3, r:0.025, l:2.2, eta:2.084e-6, ans:0.044 },
+    { dp:1.3, r:0.025, l:1.1, eta:3.126e-6, ans:0.058 },
+  ];
+  const c = _pick(cases);
+  const opts = [
+    _r(c.ans / 10, 4),
+    _r(c.ans * 10, 3),
+    c.ans,
+    _r(c.ans * 100, 2),
+    _r(c.ans * 1000, 1),
+  ];
+  return [
+    `A small artery has a length of ${c.l} mm and a radius of ${c.r} mm. The viscosity of whole blood at body temperature is ${c.eta.toExponential(3)} kPa·s. If the pressure drop across the artery is ${c.dp} kPa, what is the flow rate in mm³/s?`,
+    opts.map(v => v + ' mm³/s'), 'C',
+    `Q = ΔP·π·r⁴ / (8·η·l) = ${c.dp} × π × ${c.r}⁴ / (8 × ${c.eta.toExponential(3)} × ${c.l}) = ${c.ans} mm³/s.`
+  ];
+}
+
+// Q2: Poiseuille's Law — effect of radius change on flow
+function _genEqPoiseuilleRadius() {
+  const initFlow = _pick([50, 60, 80, 100, 120]);
+  const mult = _pick([2, 3, 4]);
+  const p4 = Math.pow(mult, 4);
+  const opts = [
+    initFlow * mult,
+    initFlow * mult * mult,
+    initFlow * p4,
+    initFlow * Math.pow(mult, 3),
+    initFlow * p4 * 2,
+  ];
+  return [
+    `In control conditions, flow through a blood vessel is ${initFlow} mL/min under a constant pressure gradient. What would be the approximate flow in mL/min after increasing the vessel diameter to ${mult} times normal, assuming the pressure gradient is maintained?`,
+    opts.map(v => v + ' mL/min'), 'C',
+    `Poiseuille's Law: Q ∝ r⁴. Increasing diameter (radius) ${mult}-fold increases flow by ${mult}⁴ = ${p4}×. Flow = ${initFlow} × ${p4} = ${initFlow * p4} mL/min.`
+  ];
+}
+
+// Q4: Minute ventilation
+function _genEqMV() {
+  const vt = _pick([450, 500, 550, 600, 650]);
+  const rr = _pick([12, 14, 15, 16, 18]);
+  const mv = _r(vt * rr / 1000, 2);
+  const opts = [
+    _r(vt / 1000, 3),
+    _r(vt * rr, 0),
+    mv,
+    _r(vt * rr / 100, 1),
+    _r(vt / rr / 1000, 3),
+  ];
+  return [
+    `A patient has a tidal volume of ${vt} mL and a respiratory rate of ${rr} breaths/minute. What is their minute ventilation in L/min?`,
+    opts.map(v => v + ' L/min'), 'C',
+    `MV = VT × RR = ${vt} mL × ${rr} = ${vt * rr} mL/min = ${mv} L/min (÷1000 to convert mL to L).`
+  ];
+}
+
+// Q5: Alveolar ventilation
+function _genEqAlveolarVent() {
+  const vt = _pick([480, 500, 520, 550, 600]);
+  const vd = _pick([140, 150, 158, 160, 170]);
+  const rr = _pick([12, 14, 15, 16, 18]);
+  const va = (vt - vd) * rr;
+  const opts = [
+    vt * rr,
+    (vt + vd) * rr,
+    va,
+    (vt - vd),
+    vd * rr,
+  ];
+  return [
+    `A patient has a tidal volume of ${vt} mL and a physiological dead space of ${vd} mL. Their respiratory rate is ${rr} breaths/minute. What is their alveolar ventilation in mL/min?`,
+    opts.map(v => v + ' mL/min'), 'C',
+    `VA = (VT − VD) × RR = (${vt} − ${vd}) × ${rr} = ${vt - vd} × ${rr} = ${va} mL/min.`
+  ];
+}
+
+// Q6: Alveolar gas equation (simplified)
+function _genEqAlveolarGas() {
+  const pio2  = _pick([18.0, 19.0, 20.0, 21.0]);
+  const paco2 = _pick([4.0, 4.8, 5.0, 5.3, 5.6, 6.0]);
+  const rq    = 0.8;
+  const pao2  = _r(pio2 - paco2 / rq, 1);
+  const opts  = [
+    _r(pio2 - paco2, 1),
+    _r(pio2 - paco2 * rq, 1),
+    pao2,
+    _r(pio2 + paco2 / rq, 1),
+    _r(paco2 / rq, 1),
+  ];
+  return [
+    `A patient has a PiO₂ of ${pio2} kPa and a PaCO₂ of ${paco2} kPa. Their respiratory quotient is 0.8. Using the simplified alveolar gas equation, what is their PAO₂ in kPa?`,
+    opts.map(v => v + ' kPa'), 'C',
+    `PAO₂ = PiO₂ − PaCO₂/RQ = ${pio2} − ${paco2}/0.8 = ${pio2} − ${_r(paco2/rq,2)} = ${pao2} kPa.`
+  ];
+}
+
+// Q7: Alveolar ventilation equation — matching VA to VCO₂
+function _genEqVentilationEqn() {
+  const va1  = _pick([4, 5, 6, 7, 8]);
+  const mult = _pick([1.5, 2, 2.5, 3]);
+  const va2  = va1 * mult;
+  const opts = [
+    _r(va1 + mult, 1),
+    _r(va1 / mult, 2),
+    va2,
+    _r(va1 * mult * mult, 1),
+    _r(va1 * mult + mult, 1),
+  ];
+  return [
+    `A patient at rest has an alveolar ventilation of ${va1} L/min and a rate of CO₂ production of 200 mL/min. After exertion, their rate of CO₂ production increases to ${Math.round(200 * mult)} mL/min. What alveolar ventilation is needed to maintain the same PACO₂?`,
+    opts.map(v => v + ' L/min'), 'C',
+    `PACO₂ ∝ VCO₂/VA. To maintain the same PACO₂, VA must increase in the same proportion as VCO₂. VCO₂ increased by ${mult}×, so VA must also become ${mult}× larger: ${va1} × ${mult} = ${va2} L/min.`
+  ];
+}
+
+// Q8: A-a gradient
+function _genEqAaGradient() {
+  const fio2  = 0.21;
+  const pb    = _pick([100.0, 101.3]);
+  const psvp  = 6.3;
+  const paco2 = _pick([4.8, 5.0, 5.3, 5.6, 6.0]);
+  const paO2  = _r(fio2 * (pb - psvp) - paco2 / 0.8, 2);
+  const delta = _pick([0.5, 0.8, 1.0, 1.2, 1.4, 1.5, 1.8, 2.0]);
+  const pao2  = _r(paO2 - delta, 2);
+  const aa    = _r(paO2 - pao2, 2);
+  const opts  = [
+    _r(paO2 - paco2, 2),
+    _r(aa * 2, 2),
+    aa,
+    _r(aa + 2.5, 2),
+    _r(paO2, 2),
+  ];
+  return [
+    `A patient breathing room air has a PaO₂ of ${pao2} kPa and PaCO₂ of ${paco2} kPa. Atmospheric pressure is ${pb} kPa, saturated vapour pressure of water is 6.3 kPa, FiO₂ is 0.21, and RQ is 0.8. What is their A-a gradient in kPa?`,
+    opts.map(v => v + ' kPa'), 'C',
+    `PAO₂ = FiO₂(PB − PSVP) − PaCO₂/RQ = 0.21 × (${pb} − 6.3) − ${paco2}/0.8 = ${paO2} kPa. A-a gradient = PAO₂ − PaO₂ = ${paO2} − ${pao2} = ${aa} kPa.`
+  ];
+}
+
+// Q10: Oxygen dissolved in blood
+function _genEqO2Dissolved() {
+  const pao2 = _pick([10.0, 11.0, 12.0, 13.4, 14.0, 15.0]);
+  const sol  = 0.0225;
+  const ans  = _r(pao2 * sol, 2);
+  const opts = [
+    _r(pao2 * sol * 10, 2),
+    _r(pao2 / sol, 0),
+    ans,
+    _r(pao2 * sol * 100, 1),
+    _r(pao2 * sol / 10, 3),
+  ];
+  return [
+    `A patient has a PaO₂ of ${pao2} kPa and oxygen saturations of 98% on room air. Using a solubility coefficient for oxygen of 0.0225 mLO₂/100mL per kPa, what is the concentration of oxygen dissolved in their blood in mLO₂/100mL?`,
+    opts.map(v => v + ' mLO₂/100mL'), 'C',
+    `Dissolved O₂ = PaO₂ × solubility = ${pao2} × 0.0225 = ${ans} mLO₂/100mL. Note how small this is compared with Hb-bound oxygen.`
+  ];
+}
+
+// Q11: Oxygen content % change with falling Hb
+function _genEqO2Content() {
+  const hb1L = _pick([130, 140, 150, 160]);
+  const hb2L = _pick([70, 80, 90, 100, 110]);
+  const hb1  = hb1L / 10, hb2 = hb2L / 10;
+  const sao2 = 0.98, pao2 = 13.4, sol = 0.0225;
+  const cao1 = _r(hb1 * 1.34 * sao2 + pao2 * sol, 2);
+  const cao2 = _r(hb2 * 1.34 * sao2 + pao2 * sol, 2);
+  const pct  = Math.round((cao1 - cao2) / cao1 * 100);
+  const opts = [
+    Math.round((hb1L - hb2L) / hb2L * 100),
+    Math.round(hb2L / hb1L * 100),
+    pct,
+    pct + 11,
+    Math.round(pct / 2),
+  ];
+  return [
+    `A patient has a haemoglobin of ${hb2L} g/L (normal 130–175 g/L). Previously it was ${hb1L} g/L. Assuming PaO₂ (13.4 kPa) and oxygen saturation (98%) are unchanged, by what percentage has their oxygen content (CaO₂) decreased? Use Hüfner's constant of 1.34.`,
+    opts.map(v => v + '%'), 'C',
+    `CaO₂ = Hb × 1.34 × SaO₂ + PaO₂ × 0.0225. With ${hb1L} g/L (${hb1} g/dL): ${cao1} mLO₂/100mL. With ${hb2L} g/L (${hb2} g/dL): ${cao2} mLO₂/100mL. % decrease = (${cao1} − ${cao2}) / ${cao1} × 100 = ${pct}%.`
+  ];
+}
+
+// Q12: Stroke volume
+function _genEqStrokeVolume() {
+  let edv, esv;
+  do {
+    edv = _pick([80, 90, 92, 100, 110, 120, 130, 140]);
+    esv = _pick([25, 30, 32, 35, 40, 45, 50, 55]);
+  } while (esv >= edv * 0.5);
+  const sv = edv - esv;
+  const opts = [
+    esv,
+    edv,
+    sv,
+    edv + esv,
+    sv + 10,
+  ];
+  return [
+    `A patient has an end-diastolic volume of ${edv} mL and an end-systolic volume of ${esv} mL. What is their stroke volume in mL?`,
+    opts.map(v => v + ' mL'), 'C',
+    `SV = EDV − ESV = ${edv} − ${esv} = ${sv} mL.`
+  ];
+}
+
+// Q13: Ejection fraction
+function _genEqEjectionFraction() {
+  let edv, esv, sv, ef;
+  do {
+    edv = _pick([80, 90, 92, 100, 110, 120, 130, 140]);
+    esv = _pick([25, 30, 32, 35, 40, 45, 50]);
+    sv  = edv - esv;
+    ef  = Math.round(sv / edv * 100);
+  } while (esv >= edv * 0.5 || ef < 50 || ef > 80);
+  const wrongEF = Math.round(esv / edv * 100);
+  const opts = [
+    wrongEF,
+    ef + 10,
+    ef,
+    ef + 15,
+    Math.round(sv / esv * 100),
+  ];
+  return [
+    `A patient has an end-diastolic volume of ${edv} mL and an end-systolic volume of ${esv} mL. What is their ejection fraction?`,
+    opts.map(v => v + '%'), 'C',
+    `SV = EDV − ESV = ${edv} − ${esv} = ${sv} mL. EF = (SV ÷ EDV) × 100 = (${sv} ÷ ${edv}) × 100 = ${ef}%.`
+  ];
+}
+
+// Q14: Cardiac output
+function _genEqCardiacOutputEq() {
+  const hr  = _pick([60, 65, 70, 72, 75, 80]);
+  const sv  = _pick([55, 60, 65, 70, 75, 80]);
+  const co  = _r(hr * sv / 1000, 2);
+  const opts = [
+    _r(hr * sv / 100, 1),
+    _r((hr + sv) / 1000, 3),
+    co,
+    _r(co + 1, 2),
+    hr * sv,
+  ];
+  return [
+    `A patient has a heart rate of ${hr} bpm and a stroke volume of ${sv} mL. What is their cardiac output in L/min?`,
+    opts.map(v => v + ' L/min'), 'C',
+    `CO = SV × HR ÷ 1000 = ${sv} × ${hr} ÷ 1000 = ${co} L/min. Divide by 1000 to convert mL/min to L/min.`
+  ];
+}
+
+// Q15: MAP from SBP/DBP
+function _genEqMAP() {
+  let sbp, dbp, map;
+  do {
+    sbp = _pick([95, 102, 108, 110, 118, 120, 124, 130, 138]);
+    dbp = _pick([60, 62, 65, 68, 70, 72, 75, 78, 80, 85]);
+    map = Math.round((sbp + 2 * dbp) / 3);
+  } while (sbp - dbp < 20 || sbp - dbp > 60);
+  const opts = [
+    Math.round((sbp + dbp) / 2),
+    Math.round((2 * sbp + dbp) / 3),
+    map,
+    Math.round(sbp * 0.4 + dbp * 0.6),
+    dbp,
+  ];
+  return [
+    `A patient has a blood pressure of ${sbp}/${dbp} mmHg. What is their mean arterial pressure (MAP)?`,
+    opts.map(v => v + ' mmHg'), 'C',
+    `MAP = (SBP + 2×DBP) / 3 = (${sbp} + ${2*dbp}) / 3 = ${sbp + 2*dbp} / 3 = ${map} mmHg.`
+  ];
+}
 
 // ═══════════════════════════════════════════════════════════════
 // QUESTION DATA
@@ -1255,6 +1629,44 @@ const BLOCKS = {
         ["A patient requires surgery to treat a fracture. Which THREE elements are required for valid consent for any treatment or procedure?", ["Capacity to make the decision, sufficient information about the procedure and alternatives, and voluntariness (free from coercion)", "Patient age > 16, GP referral, and hospital admission", "Written signature, two witnesses, and a 48-hour cooling-off period", "Formal psychiatric assessment, legal documentation, and family agreement", "Insurance coverage, clinical indication, and specialist approval"], "A", "From your Notion notes (VLE: Consent): Valid consent requires all three elements: (1) Capacity — the patient can understand, retain, weigh, and communicate their decision (Mental Capacity Act 2005); (2) Information — sufficient disclosure about the procedure, risks, benefits, alternatives, and consequences of refusal (Montgomery v Lanarkshire 2015); (3) Voluntariness — the decision must be free from undue pressure, coercion, or manipulation. Absence of any one element renders consent invalid."]
       ]
     }
+  },
+
+  // ── Equations practice block (hidden from home grid; has its own dedicated screen) ──
+  "eq2": {
+    name:"Block 2 Equations", sub:"Practice Questions", color:"#4A90D9", hidden:true,
+    lectures: {
+      "Equations Practice": [
+        { type:'dynamic', generate: _genEqPoiseuilleFlow },
+        { type:'dynamic', generate: _genEqPoiseuilleRadius },
+        ["According to Fick's Law, which combination of changes to the relevant factors would increase the rate of diffusion across the alveolar-capillary membrane?",
+         ["A: ↓ area, ↓ ΔP, ↓ solubility, ↓ mol.wt, ↓ thickness",
+          "B: ↓ area, ↓ ΔP, ↓ solubility, ↑ mol.wt, ↓ thickness",
+          "C: ↓ area, ↑ ΔP, ↓ solubility, ↑ mol.wt, ↑ thickness",
+          "D: ↑ area, ↑ ΔP, ↑ solubility, ↓ mol.wt, ↓ thickness",
+          "E: ↑ area, ↑ ΔP, ↑ solubility, ↑ mol.wt, ↑ thickness"],
+         "D",
+         "Fick's Law: rate = (A × D × ΔP) / T. Increasing diffusion rate requires: ↑ surface area (A), ↑ partial pressure difference (ΔP), ↑ solubility (part of D), ↓ molecular weight (D ∝ 1/√MW), ↓ membrane thickness (T). Option D is the only combination where all five changes are in the correct direction."],
+        { type:'dynamic', generate: _genEqMV },
+        { type:'dynamic', generate: _genEqAlveolarVent },
+        { type:'dynamic', generate: _genEqAlveolarGas },
+        { type:'dynamic', generate: _genEqVentilationEqn },
+        { type:'dynamic', generate: _genEqAaGradient },
+        ["Administration of supplemental oxygen to a hypoxaemic patient with pulmonary oedema (increased alveolar-capillary membrane thickness) primarily increases the rate of oxygen diffusion by altering which component of Fick's Law?",
+         ["Concentration difference of the gas across the membrane",
+          "Diffusion coefficient (D) of oxygen in the alveolar fluid",
+          "Partial pressure difference of oxygen across the membrane (ΔP)",
+          "Surface area of the alveolar-capillary membrane (A)",
+          "Thickness of the alveolar-capillary membrane (T)"],
+         "C",
+         "O₂ administration increases FiO₂ and therefore PAO₂ (via the alveolar gas equation), which increases the partial pressure gradient (ΔP) of O₂ across the alveolar-capillary membrane — the driving force for diffusion. Membrane thickness and surface area are unchanged by O₂ therapy. The diffusion coefficient D is a property of the gas, not altered by FiO₂."],
+        { type:'dynamic', generate: _genEqO2Dissolved },
+        { type:'dynamic', generate: _genEqO2Content },
+        { type:'dynamic', generate: _genEqStrokeVolume },
+        { type:'dynamic', generate: _genEqEjectionFraction },
+        { type:'dynamic', generate: _genEqCardiacOutputEq },
+        { type:'dynamic', generate: _genEqMAP }
+      ]
+    }
   }
 };
 
@@ -1514,6 +1926,7 @@ function buildHome() {
   const g = document.getElementById('bGrid');
   g.innerHTML = '';
   Object.entries(BLOCKS).forEach(([id, b]) => {
+    if (b.hidden) return; // skip blocks with their own dedicated screen (e.g. eq2)
     let totalQ = 0;
     Object.values(b.lectures).forEach(qs => totalQ += qs.length);
     const s = allStats[id] || {};
@@ -1591,6 +2004,7 @@ function startAllRandom() {
   // Build pool: every question from every block and lecture
   pendingAllRandomPool = [];
   Object.entries(BLOCKS).forEach(([bid, block]) => {
+    if (block.hidden) return; // exclude dedicated blocks (e.g. eq2) from all-random
     Object.entries(block.lectures).forEach(([lec, qs]) => {
       qs.forEach((q, idx) => {
         pendingAllRandomPool.push({ lecture: lec, qIdx: idx, q, blockName: block.name, blockId: bid });
@@ -1644,7 +2058,7 @@ function confirmAllRandom() {
   if (!arSelectedCount) return;
   closeArModal();
 
-  const pool = pendingAllRandomPool.slice(0, arSelectedCount).map(item => ({ ...item, q: shuffleAnswers(item.q) }));
+  const pool = pendingAllRandomPool.slice(0, arSelectedCount).map(item => ({ ...item, q: shuffleAnswers(resolveQuestion(item.q)) }));
 
   state.questions    = pool;
   state.answers      = {};
@@ -1691,7 +2105,7 @@ function startQuiz() {
     if (mode === 'random') {
       fisherYates(pool);
       pool = pool.slice(0, Math.min(numQ, pool.length));
-      pool = pool.map(item => ({ ...item, q: shuffleAnswers(item.q) }));
+      pool = pool.map(item => ({ ...item, q: shuffleAnswers(resolveQuestion(item.q)) }));
       state.isRandom = true;
       state.isAllRandom = false;
     } else {
@@ -2529,6 +2943,86 @@ window.addEventListener('pointermove',e=>{SS.target=[e.clientX/window.innerWidth
 window.addEventListener('pointerdown',e=>{SS.click=[e.clientX/window.innerWidth,1-e.clientY/window.innerHeight];SS.clickStart=performance.now();if(!e.target.closest('.modal,.btn,select,input')){const r=document.createElement('div');r.className='ripple';r.style.left=e.clientX+'px';r.style.top=e.clientY+'px';document.body.appendChild(r);setTimeout(()=>r.remove(),900);}});
 (function ease(){SS.mouse[0]+=(SS.target[0]-SS.mouse[0])*0.12;SS.mouse[1]+=(SS.target[1]-SS.mouse[1])*0.12;requestAnimationFrame(ease);})();
 window.shaderAnswerFlash=function(correct){SS.answer=correct?1:-1;SS.answerStart=performance.now();setTimeout(()=>{SS.answer=0;},3200);};
+// ═══════════════════════════════════════════════════════════════
+// BLOCK 2 EQUATIONS — STUDY & PRACTICE
+// ═══════════════════════════════════════════════════════════════
+
+let _eqStudyRendered = false;
+let _eqPracticeRendered = false;
+
+function showEquations() {
+  showScreen('equations');
+  if (!_eqStudyRendered) { renderEqStudy(); _eqStudyRendered = true; }
+}
+
+function showEqTab(tab) {
+  document.querySelectorAll('#eqTabs .tab').forEach(t => t.classList.remove('on'));
+  document.getElementById('eqTab_' + tab).classList.add('on');
+  document.getElementById('eqStudy').style.display   = tab === 'study'    ? '' : 'none';
+  document.getElementById('eqPractice').style.display = tab === 'practice' ? '' : 'none';
+  if (tab === 'practice' && !_eqPracticeRendered) { renderEqPractice(); _eqPracticeRendered = true; }
+}
+
+function renderEqStudy() {
+  const el = document.getElementById('eqStudy');
+  el.innerHTML = EQUATIONS.map((eq, i) => `
+    <div class="eq-card" id="eqCard_${i}">
+      <button class="eq-card-head" onclick="toggleEqCard(${i})">
+        <div>
+          <div class="eq-name">${eq.name}</div>
+          <div class="eq-formula">${eq.formula}</div>
+        </div>
+        <span class="eq-chevron">▶</span>
+      </button>
+      <div class="eq-body">
+        <div class="eq-vars">
+          ${eq.variables.map(v => `<div class="eq-var-row"><span class="eq-sym">${v.sym}</span><span class="eq-desc">${v.desc}</span></div>`).join('')}
+        </div>
+        <p class="eq-expl">${eq.explanation}</p>
+        <div class="eq-session">📖 ${eq.session}</div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleEqCard(i) {
+  const card = document.getElementById('eqCard_' + i);
+  card.classList.toggle('open');
+}
+
+function renderEqPractice() {
+  const b = BLOCKS['eq2'];
+  const total = b.lectures['Equations Practice'].length;
+  document.getElementById('eqPractice').innerHTML = `
+    <div class="eq-practice-panel">
+      <p class="eq-practice-desc">
+        ${total} exam-style calculation questions covering all Block 2 equations.
+        Values are randomised each session — you must use the equation to get the right answer.
+      </p>
+      <button class="btn btn-green eq-start-btn" onclick="startEqPractice()">Start Practice →</button>
+    </div>`;
+}
+
+function startEqPractice() {
+  const b   = BLOCKS['eq2'];
+  const lec = Object.keys(b.lectures)[0];
+  const pool = b.lectures[lec].map((q, idx) => ({
+    lecture: lec, qIdx: idx,
+    q: shuffleAnswers(resolveQuestion(q)),
+    blockName: b.name
+  }));
+  state.blockId     = 'eq2';
+  state.questions   = pool;
+  state.answers     = {};
+  state.currentQ    = 0;
+  state.attemptId   = Date.now().toString();
+  state.isRandom    = false;
+  state.isAllRandom = false;
+  clearResume();
+  document.getElementById('qTitle').textContent = 'Block 2 Equations — Practice';
+  showScreen('quiz');
+  renderQ();
+}
+
 // clock
 (function tick(){const el=document.getElementById('topClock');if(el)el.textContent=new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});setTimeout(tick,30000);})();
 // fps
