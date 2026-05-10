@@ -100,6 +100,13 @@
     <span class="arb-icon">🎲</span>
   </button>
   <div class="block-grid" id="bGrid"></div>
+  <button class="eq2-btn" onclick="showEquations()">
+    <div class="arb-left">
+      <span class="arb-title">📐 Block 2 Equations — Study &amp; Practice</span>
+      <span class="arb-sub">Study all 20 equations with explanations · then test yourself with 15 randomised calculation questions — values change every session.</span>
+    </div>
+    <span class="arb-icon">∑</span>
+  </button>
   <div class="home-actions">
     <button class="btn" onclick="showHistory()">📊 Attempt history</button>
     <button class="btn" onclick="showAllStats()">📈 Summary stats</button>
@@ -225,6 +232,20 @@
   </div>
   <p class="sub">All your quiz attempts, oldest to newest. Track your improvement over time.</p>
   <div id="hContent"></div>
+</div>
+
+<!-- ── EQUATIONS ── -->
+<div id="equations" class="screen">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+    <h2>Block 2 Equations</h2>
+    <button class="btn" onclick="showHome()">← Home</button>
+  </div>
+  <div class="tabs" id="eqTabs">
+    <button class="tab on" id="eqTab_study"    onclick="showEqTab('study')">Study</button>
+    <button class="tab"    id="eqTab_practice" onclick="showEqTab('practice')">Practice</button>
+  </div>
+  <div id="eqStudy"></div>
+  <div id="eqPractice" style="display:none"></div>
 </div>
 
 </div><!-- .app -->
