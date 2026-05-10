@@ -903,7 +903,7 @@ canvas { max-width: 100%; border-radius: var(--radius); }
 .gate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* REPORT QUESTION */
-.flag-btn { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:9px; letter-spacing:0.18em; text-transform:uppercase; background:none; border:1px solid rgba(255,255,255,0.08); color:var(--ink-faint); padding:4px 10px; cursor:pointer; border-radius:2px; transition:border-color 0.15s,color 0.15s; margin-top:10px; display:inline-flex; align-items:center; gap:6px; }
+.flag-btn { font-family:"JetBrains Mono",ui-monospace,monospace; font-size:9px; letter-spacing:0.18em; text-transform:uppercase; background:none; border:1px solid rgba(255,100,100,0.22); color:rgba(255,120,120,0.65); padding:4px 10px; cursor:pointer; border-radius:2px; transition:border-color 0.15s,color 0.15s; margin-top:10px; display:inline-flex; align-items:center; gap:6px; }
 .flag-btn:hover { border-color:rgba(255,100,100,0.45); color:var(--bad); }
 .flag-btn.flagged { border-color:rgba(255,100,100,0.40); color:var(--bad); opacity:0.7; cursor:default; pointer-events:none; }
 .report-overlay { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.72); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; padding:1rem; }
