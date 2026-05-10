@@ -974,6 +974,7 @@ canvas { max-width: 100%; border-radius: var(--radius); }
 
 /* ── Block 2 Equations ─────────────────────────────────────────── */
 .eq2-btn {
+  -webkit-appearance:none; appearance:none;
   display:flex; justify-content:space-between; align-items:center;
   width:100%; padding:0.9rem 1.1rem; margin:0.75rem 0;
   background:rgba(74,144,217,0.08); border:1px solid rgba(74,144,217,0.3);
