@@ -55,9 +55,11 @@ document.getElementById('gateEmail').addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════════════
 // VERSION & CHANGELOG
 // ═══════════════════════════════════════════════════════════════
-const QUIZ_VERSION = "v25.0";
+const QUIZ_VERSION = "v25.1";
 
 const CHANGELOG = [
+  { version:"v25.1", date:"11 May 2026", summary:"High-Yield PPT — 25 cross-block pharmacology questions",
+    changes:["New 'High-Yield PPT' card on the landing page (purple) covering cross-block pharmacology topics from PPT lectures","25 questions across 10 lecture groups: Contraception, Drugs in Labour & Pregnancy, Menopause & HRT, Respiratory Pharmacology, GI Pharmacology, Antibiotics, Neurology & Epilepsy, Pharmacokinetics, Bone & Musculoskeletal, and Cardiovascular Pharmacology","Questions sourced verbatim from the PPT Quiz Questions Notion database","Explanations written from Phase 1 Notion lecture notes","Fully integrated with stats, history, spaced repetition, and all existing quiz modes"] },
   { version:"v25.0", date:"10 May 2026", summary:"Block 2 Equations — study reference + randomised practice questions",
     changes:["New 'Block 2 Equations' section accessible from the home screen, separate from the standard block grid","Study tab: accordion reference cards for all 20 Block 2 equations — formula, variable definitions, explanation, and associated teaching session","Practice tab: 15 exam-style calculation questions drawn from the Block 2 CTB Equations document","All 13 calculation questions use dynamic generators — values randomised each session so answers cannot be memorised","2 conceptual Fick's Law questions are static","Stats and attempt history tracked in the Summary Stats screen under 'Block 2 Equations' tab","Equations questions excluded from All Questions — Random Order mode"] },
   { version:"v24.2", date:"10 May 2026", summary:"Dynamic math questions — randomised values each session",
