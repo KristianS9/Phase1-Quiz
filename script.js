@@ -2129,6 +2129,7 @@ async function submitReport() {
         source:   _rSrc || '',
         lecture:  item.lecture   || '',
         block:    item.blockName || '',
+        qIdx:     _rQIdx,
         reason:   reason.substring(0, 500),
         email:    localStorage.getItem('quiz_email_verified') || '',
       }),

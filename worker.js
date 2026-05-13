@@ -25,7 +25,7 @@ export default {
       let body;
       try { body = await request.json(); } catch { return json({ error: 'bad_request' }, 400); }
 
-      const { question, options, correct, source, lecture, block, reason, email } = body;
+      const { question, options, correct, source, lecture, block, qIdx, reason, email } = body;
       if (!reason) return json({ error: 'reason_required' }, 400);
 
       if (!env.NOTION_TOKEN) return json({ error: 'no_token' }, 500);
@@ -34,7 +34,8 @@ export default {
       const baseReason = (reason || '').split(' — ')[0].trim();
       const issueType = ISSUE_TYPE_MAP[baseReason] || 'Other';
 
-      const context = [lecture, block, source].filter(Boolean).join(' · ');
+      const qLabel = (typeof qIdx === 'number') ? `Q${qIdx + 1}` : null;
+      const context = [lecture, block, qLabel, source].filter(Boolean).join(' · ');
 
       const notionResp = await fetch('https://api.notion.com/v1/pages', {
         method: 'POST',
