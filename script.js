@@ -1413,11 +1413,15 @@ async function submitReport() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        question: item.q[0].substring(0, 200),
+        question: item.q[0],
+        options:  item.q[1],
+        correct:  item.q[2],
         source:   _rSrc || '',
         lecture:  item.lecture   || '',
         block:    item.blockName || '',
+        qIdx:     _rQIdx,
         reason:   reason.substring(0, 500),
+        email:    localStorage.getItem('quiz_email_verified') || '',
       }),
     });
     if (!resp.ok) throw new Error('server error');
