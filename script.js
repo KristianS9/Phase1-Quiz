@@ -1983,6 +1983,44 @@ let state = {
 function load(key, def) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; } }
 function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {} }
 
+// ── Theme management ────────────────────────────────────────────
+const THEME_KEY = 'p1quiz_theme';
+function getSystemTheme() {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'midnight' : 'vellum';
+}
+function applyTheme(theme) {
+  document.body.classList.toggle('vellum-mode', theme === 'vellum');
+  document.body.classList.toggle('lab-mode',    theme === 'lab');
+  document.querySelectorAll('.mode-toggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === theme);
+  });
+  if (theme === 'midnight') {
+    SS.accent = '#c98758';
+    if (window.shaderSwitch) window.shaderSwitch(FRAG_BIFROST);
+  } else if (theme === 'vellum') {
+    SS.accent = '#8a4f2c';
+    // WebGL canvas hidden via CSS — no shader switch needed
+  } else { // lab
+    SS.accent = '#7fe3d0';
+    if (window.shaderSwitch) window.shaderSwitch(FRAG_S);
+  }
+  try { localStorage.setItem(THEME_KEY, theme); } catch(_) {}
+}
+function initTheme() {
+  const saved = load(THEME_KEY, null);
+  const theme = saved || getSystemTheme();
+  // applyTheme() calls window.shaderSwitch(), which is set by the WebGL IIFE below.
+  // initTheme() runs after the IIFE (bottom of file), so shaderSwitch is available.
+  applyTheme(theme);
+  // Follow system changes only while no manual override is saved
+  if (!saved) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+      if (!load(THEME_KEY, null)) applyTheme(e.matches ? 'midnight' : 'vellum');
+    });
+  }
+}
+// ────────────────────────────────────────────────────────────────
+
 let allAttempts = load('p1quiz_attempts', []);
 let allStats    = load('p1quiz_stats', {});    // {blockId: {lectureName: {answered, correct}}}
 
@@ -3240,6 +3278,59 @@ void main(){
   gl_FragColor=vec4(col,1.0);
 }`;
 function hexToRgb(hex){const h=hex.replace('#','');const n=parseInt(h,16);return[((n>>16)&255)/255,((n>>8)&255)/255,(n&255)/255];}
+
+// ── Bifröst aurora shader (Midnight / Vellum themes) ────────────
+const FRAG_BIFROST = `
+precision highp float;
+uniform vec2 u_res; uniform float u_time; uniform vec2 u_mouse;
+uniform vec2 u_click; uniform float u_clickTime;
+uniform float u_answer; uniform float u_answerTime;
+float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+float vnoise(vec2 p){
+  vec2 i=floor(p),f=fract(p);
+  float a=hash(i),b=hash(i+vec2(1,0)),c=hash(i+vec2(0,1)),d=hash(i+vec2(1,1));
+  vec2 u=f*f*(3.0-2.0*f);
+  return mix(a,b,u.x)+(c-a)*u.y*(1.0-u.x)+(d-b)*u.x*u.y;
+}
+float fbm(vec2 p){float v=0.0,a=0.5;for(int i=0;i<6;i++){v+=a*vnoise(p);p=p*2.03+vec2(1.7,1.3);a*=0.5;}return v;}
+float curtain(vec2 uv,float t,float seed){
+  float wob=fbm(vec2(uv.x*2.0+seed,t*0.25));
+  float band=exp(-pow((uv.y-0.15-wob*0.5)*2.6,2.0));
+  band*=smoothstep(0.0,0.3,fbm(vec2(uv.x*4.0+seed*3.0,t*0.4)));
+  return band;
+}
+void main(){
+  vec2 uv=gl_FragCoord.xy/u_res.xy;
+  vec2 p=(gl_FragCoord.xy-0.5*u_res)/u_res.y;
+  float t=u_time*0.12;
+  vec3 zenith=vec3(0.020,0.030,0.065),horizon=vec3(0.045,0.055,0.110);
+  vec3 col=mix(horizon,zenith,smoothstep(0.0,1.0,uv.y));
+  col*=0.85;
+  vec2 sp=floor(p*240.0);float sh=hash(sp);
+  float star=step(0.997,sh);float twinkle=0.5+0.5*sin(u_time*2.0+sh*30.0);
+  col+=vec3(0.85,0.85,0.95)*star*twinkle*0.9;
+  float c1=curtain(uv+vec2(0.0,0.02),t,0.0);
+  float c2=curtain(uv+vec2(0.0,0.10),t*1.3,3.7);
+  float c3=curtain(uv+vec2(0.0,-0.05),t*0.8,7.4);
+  col+=vec3(0.18,0.78,0.55)*c1*0.55;
+  col+=vec3(0.20,0.55,0.85)*c2*0.45;
+  col+=vec3(0.78,0.35,0.55)*c3*0.30;
+  float fog=fbm(p*1.5+vec2(t*0.6,0.0));
+  col=mix(col,col*0.55,smoothstep(0.0,0.4,(1.0-uv.y)*fog));
+  vec2 mp=(u_mouse-0.5)*vec2(u_res.x/u_res.y,1.0);
+  float r=length(p-mp);
+  col+=vec3(0.82,0.55,0.30)*0.10*exp(-r*4.5);
+  vec2 cp=(u_click-0.5)*vec2(u_res.x/u_res.y,1.0);
+  float dC=length(p-cp);
+  float wave=sin(dC*22.0-u_clickTime*7.0)*exp(-dC*3.5)*exp(-u_clickTime*1.6);
+  col+=vec3(0.82,0.55,0.30)*0.30*max(0.0,wave);
+  float aF=exp(-u_answerTime*1.8);
+  if(u_answer>0.5) col+=vec3(0.30,0.85,0.45)*0.12*aF;
+  else if(u_answer<-0.5){col+=vec3(0.85,0.20,0.20)*0.18*aF;col*=1.0-0.10*aF*step(0.5,fract(p.y*100.0+u_time*8.0));}
+  col*=1.0-0.45*dot(p,p);
+  gl_FragColor=vec4(col,1.0);
+}`;
+
 const SS = {
   t0:performance.now(), mouse:[0.5,0.5], target:[0.5,0.5],
   click:[0.5,0.5], clickStart:-9999, answer:0, answerStart:-9999,
@@ -3257,21 +3348,36 @@ const SS = {
   const gl=cv.getContext('webgl',{antialias:false,premultipliedAlpha:false});
   if(!gl) return;
   function mkShader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);return gl.getShaderParameter(s,gl.COMPILE_STATUS)?s:null;}
-  const vs=mkShader(gl.VERTEX_SHADER,VERT_S),fs=mkShader(gl.FRAGMENT_SHADER,FRAG_S);
-  if(!vs||!fs) return;
-  const prog=gl.createProgram();
-  gl.attachShader(prog,vs);gl.attachShader(prog,fs);gl.linkProgram(prog);
-  if(!gl.getProgramParameter(prog,gl.LINK_STATUS)) return;
-  gl.useProgram(prog);
   const buf=gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER,buf);
   gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
-  const ap=gl.getAttribLocation(prog,'a_pos');
-  gl.enableVertexAttribArray(ap);gl.vertexAttribPointer(ap,2,gl.FLOAT,false,0,0);
-  const U={res:gl.getUniformLocation(prog,'u_res'),time:gl.getUniformLocation(prog,'u_time'),mouse:gl.getUniformLocation(prog,'u_mouse'),click:gl.getUniformLocation(prog,'u_click'),clickTime:gl.getUniformLocation(prog,'u_clickTime'),answer:gl.getUniformLocation(prog,'u_answer'),answerTime:gl.getUniformLocation(prog,'u_answerTime'),speed:gl.getUniformLocation(prog,'u_speed'),accent:gl.getUniformLocation(prog,'u_accent')};
+  let currentProg=null, U={};
+  function buildProgram(fragSrc){
+    const vs=mkShader(gl.VERTEX_SHADER,VERT_S),fs=mkShader(gl.FRAGMENT_SHADER,fragSrc);
+    if(!vs||!fs) return;
+    const p=gl.createProgram();
+    gl.attachShader(p,vs);gl.attachShader(p,fs);gl.linkProgram(p);
+    if(!gl.getProgramParameter(p,gl.LINK_STATUS)) return;
+    gl.useProgram(p);
+    const ap=gl.getAttribLocation(p,'a_pos');
+    gl.enableVertexAttribArray(ap);gl.vertexAttribPointer(ap,2,gl.FLOAT,false,0,0);
+    currentProg=p;
+    U={res:gl.getUniformLocation(p,'u_res'),time:gl.getUniformLocation(p,'u_time'),mouse:gl.getUniformLocation(p,'u_mouse'),click:gl.getUniformLocation(p,'u_click'),clickTime:gl.getUniformLocation(p,'u_clickTime'),answer:gl.getUniformLocation(p,'u_answer'),answerTime:gl.getUniformLocation(p,'u_answerTime'),speed:gl.getUniformLocation(p,'u_speed'),accent:gl.getUniformLocation(p,'u_accent')};
+  }
+  window.shaderInit=buildProgram;
+  window.shaderSwitch=buildProgram;
   function rsz(){const d=Math.min(window.devicePixelRatio||1,2),w=Math.max(1,Math.round(cv.clientWidth*d)),h=Math.max(1,Math.round(cv.clientHeight*d));if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;gl.viewport(0,0,w,h);}}
   new ResizeObserver(rsz).observe(cv);rsz();
-  function frame(){const a=hexToRgb(SS.accent);gl.uniform2f(U.res,cv.width,cv.height);gl.uniform1f(U.time,SS.time());gl.uniform2f(U.mouse,SS.mouse[0],SS.mouse[1]);gl.uniform2f(U.click,SS.click[0],SS.click[1]);gl.uniform1f(U.clickTime,SS.clickTime());gl.uniform1f(U.answer,SS.answer);gl.uniform1f(U.answerTime,SS.answerTime());gl.uniform1f(U.speed,SS.speed);gl.uniform3f(U.accent,a[0],a[1],a[2]);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);requestAnimationFrame(frame);}
+  function frame(){
+    if(!currentProg){requestAnimationFrame(frame);return;}
+    const a=hexToRgb(SS.accent);
+    gl.uniform2f(U.res,cv.width,cv.height);gl.uniform1f(U.time,SS.time());
+    gl.uniform2f(U.mouse,SS.mouse[0],SS.mouse[1]);gl.uniform2f(U.click,SS.click[0],SS.click[1]);
+    gl.uniform1f(U.clickTime,SS.clickTime());gl.uniform1f(U.answer,SS.answer);
+    gl.uniform1f(U.answerTime,SS.answerTime());gl.uniform1f(U.speed,SS.speed);
+    gl.uniform3f(U.accent,a[0],a[1],a[2]);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+    requestAnimationFrame(frame);
+  }
   requestAnimationFrame(frame);
 })();
 window.addEventListener('pointermove',e=>{SS.target=[e.clientX/window.innerWidth,1-e.clientY/window.innerHeight];});
@@ -3362,3 +3468,6 @@ function startEqPractice() {
 (function tick(){const el=document.getElementById('topClock');if(el)el.textContent=new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});setTimeout(tick,30000);})();
 // fps
 let ff=0,fl=performance.now();(function fpsLoop(){ff++;const n=performance.now();if(n-fl>1000){const el=document.getElementById('railFps');if(el)el.textContent='FPS '+Math.round(ff*1000/(n-fl));ff=0;fl=n;}requestAnimationFrame(fpsLoop);})();
+// theme toggle + init (must run after SS, FRAG_BIFROST, and window.shaderInit are all defined)
+document.querySelector('.mode-toggle')?.addEventListener('click',e=>{const btn=e.target.closest('button[data-mode]');if(btn)applyTheme(btn.dataset.mode);});
+initTheme();
