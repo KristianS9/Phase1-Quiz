@@ -955,6 +955,8 @@ canvas { max-width: 100%; border-radius: var(--radius); }
 .trend-bar { flex:1; min-width:8px; border-radius:2px 2px 0 0; background:var(--accent); opacity:0.7; transition:opacity 0.15s; cursor:default; }
 .trend-bar:hover { opacity:1; }
 .empty-state { text-align:center; padding:40px 0; color:var(--ink-faint); font-size:13px; font-family:"JetBrains Mono",ui-monospace,monospace; letter-spacing:0.1em; text-transform:uppercase; }
+.del-attempt { background:none; border:none; color:var(--ink-faint); cursor:pointer; font-size:13px; padding:2px 5px; border-radius:4px; line-height:1; }
+.del-attempt:hover { color:#e55; background:rgba(229,85,85,0.12); }
 
 /* ── Enhanced Stats Page ───────────────────────────────────────── */
 .time-filters { display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap; }

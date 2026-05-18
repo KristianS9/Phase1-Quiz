@@ -1285,6 +1285,12 @@ function resetAll() {
   buildHome(); showScreen('home');
 }
 
+function deleteAttempt(id) {
+  allAttempts = allAttempts.filter(a => a.id !== id);
+  saveAttempts();
+  showHistory();
+}
+
 // ═══════════════════════════════════════════════════════════════
 // HOME
 // ═══════════════════════════════════════════════════════════════
@@ -2023,7 +2029,7 @@ function showHistory() {
     html += `<div class="trend-chart" title="Score trend (older → newer)">${chartBars}</div>`;
 
     html += `<table class="htable" style="width:100%;margin-bottom:1rem">
-      <thead><tr><th>Date</th><th>Score</th><th>Correct</th><th>Mode</th><th>Qs</th></tr></thead><tbody>`;
+      <thead><tr><th>Date</th><th>Score</th><th>Correct</th><th>Mode</th><th>Qs</th><th></th></tr></thead><tbody>`;
     [...attempts].reverse().forEach(a => {
       const date = new Date(a.date).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit'});
       const pillCls = a.pct >= 70 ? 'pill-g' : a.pct >= 50 ? 'pill-a' : 'pill-r';
@@ -2033,6 +2039,7 @@ function showHistory() {
         <td style="font-size:12px">${a.correct}/${a.answered}</td>
         <td style="font-size:11px">${a.isRandom ? '🎲 Random' : 'All'}</td>
         <td style="font-size:12px">${a.total}</td>
+        <td><button class="del-attempt" onclick="deleteAttempt('${a.id}')" title="Delete attempt">✕</button></td>
       </tr>`;
     });
     html += '</tbody></table>';
