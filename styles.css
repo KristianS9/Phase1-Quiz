@@ -1097,3 +1097,22 @@ canvas { max-width: 100%; border-radius: var(--radius); }
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
+/* ── Question timer ── */
+.q-timer {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: var(--radius);
+  border: 1px solid currentColor;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+  align-self: flex-start;
+  color: var(--ok);
+}
+.frow-toggle { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.frow-toggle label { margin-bottom: 0; }
+.frow-toggle input[type="checkbox"] {
+  width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;
+}
+
