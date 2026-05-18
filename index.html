@@ -137,6 +137,10 @@
       <label>Custom number</label>
       <input type="number" id="arCustom" min="1" max="9999" placeholder="e.g. 40" oninput="arSelectCount(null, this.value)">
     </div>
+    <div class="frow frow-toggle" style="margin-top:0.75rem">
+      <label for="timerToggleAr">Question timer</label>
+      <input type="checkbox" id="timerToggleAr" onchange="setTimerPref(this.checked)">
+    </div>
     <div class="modal-btns">
       <button class="btn" onclick="closeArModal()">Cancel</button>
       <button class="btn btn-green" id="arStartBtn" onclick="confirmAllRandom()" disabled>Start quiz</button>
@@ -159,6 +163,10 @@
       <label>Number of questions</label>
       <input type="number" id="numQ" value="20" min="1" max="999">
     </div>
+    <div class="frow frow-toggle">
+      <label for="timerToggleSetup">Question timer</label>
+      <input type="checkbox" id="timerToggleSetup" onchange="setTimerPref(this.checked)">
+    </div>
     <div class="frow">
       <label>Lectures to include</label>
       <div style="display:flex;gap:6px;margin-bottom:6px">
@@ -180,6 +188,7 @@
     <div class="quiz-header-left">
       <h2 id="qTitle"></h2>
       <div class="quiz-meta" id="qMeta"></div>
+      <div id="qTimer" class="q-timer" style="display:none">0:00</div>
     </div>
     <button class="btn" onclick="savePartial(); saveResume(); showHome();">Exit</button>
   </div>

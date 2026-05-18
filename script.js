@@ -55,9 +55,11 @@ document.getElementById('gateEmail').addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════════════
 // VERSION & CHANGELOG
 // ═══════════════════════════════════════════════════════════════
-const QUIZ_VERSION = "v25.2";
+const QUIZ_VERSION = "v25.3";
 
 const CHANGELOG = [
+  { version:"v25.3", date:"17 May 2026", summary:"Question timer — per-question stopwatch with colour feedback and avg-time stat",
+    changes:["Added optional question timer — toggle it on in the mode-selection dialog before starting a quiz","Timer starts from 0:00 when each question appears; colour shifts green → amber → red as it approaches 1 minute, then keeps counting past 60 s","Timer freezes at the recorded time when you revisit an already-answered question; resets to 0:00 on new unanswered questions","Results page shows an 'Avg / question' stat card when the timer is enabled","Attempt history table now shows avg time per question for timed attempts","Timer preference is saved to localStorage and remembered across sessions"] },
   { version:"v25.2", date:"15 May 2026", summary:"Three-theme design system — Midnight, Vellum, Lab",
     changes:["Added three visual themes: Midnight (dark, warm copper), Vellum (light parchment), and Lab (clinical teal — previous default)","Theme auto-selects based on system preference: dark mode → Midnight, light mode → Vellum","Manual theme toggle in the topbar — choice persists across sessions","Midnight theme: Cormorant Garamond serif font, IBM Plex Mono, Bifröst aurora WebGL shader","Vellum theme: Cormorant Garamond serif font, IBM Plex Mono, parchment background — no WebGL","Lab theme: Chakra Petch font, JetBrains Mono, hex-grid aurora shader (unchanged)","All screens consistent across themes: home, quiz, results, stats, history, equations"] },
   { version:"v25.1", date:"11 May 2026", summary:"High-Yield PPT — 25 cross-block pharmacology questions",
@@ -1979,7 +1981,8 @@ let state = {
   answers: {},     // index → chosen option index
   currentQ: 0,
   attemptId: null,
-  isRandom: false
+  isRandom: false,
+  questionTimes: {}
 };
 
 function load(key, def) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; } }
@@ -2025,6 +2028,11 @@ function initTheme() {
 
 let allAttempts = load('p1quiz_attempts', []);
 let allStats    = load('p1quiz_stats', {});    // {blockId: {lectureName: {answered, correct}}}
+
+// ── Question timer ──
+let timerEnabled = localStorage.getItem('p1quiz_timer') === '1';
+let _timerInterval = null;
+let _timerStart = null;
 
 function saveAttempts() { save('p1quiz_attempts', allAttempts); }
 function saveStats()    { save('p1quiz_stats', allStats); }
@@ -2428,6 +2436,7 @@ function confirmAllRandom() {
 
   state.questions    = pool;
   state.answers      = {};
+  state.questionTimes = {};
   state.currentQ     = 0;
   state.attemptId    = Date.now().toString();
   state.isRandom     = true;
@@ -2481,12 +2490,65 @@ function startQuiz() {
 
   state.questions = pool;
   state.answers = {};
+  state.questionTimes = {};
   state.currentQ = 0;
   state.attemptId = Date.now().toString();
 
   document.getElementById('qTitle').textContent = mode === 'all-random' ? 'All Blocks — Full Random' : b.name;
   showScreen('quiz');
   renderQ();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// QUESTION TIMER
+// ═══════════════════════════════════════════════════════════════
+function _lerpColor(a, b, t) {
+  const ah = parseInt(a.slice(1), 16), bh = parseInt(b.slice(1), 16);
+  const ar = (ah>>16)&0xff, ag = (ah>>8)&0xff, ab = ah&0xff;
+  const br = (bh>>16)&0xff, bg = (bh>>8)&0xff, bb = bh&0xff;
+  return `rgb(${Math.round(ar+(br-ar)*t)},${Math.round(ag+(bg-ag)*t)},${Math.round(ab+(bb-ab)*t)})`;
+}
+function _timerColor(secs) {
+  if (secs <= 45) return _lerpColor('#7ef0b4', '#ffc864', secs / 45);
+  if (secs <= 60) return _lerpColor('#ffc864', '#ff6b7a', (secs - 45) / 15);
+  return '#ff6b7a';
+}
+function updateTimerEl(secs) {
+  const el = document.getElementById('qTimer');
+  if (!el) return;
+  const m = Math.floor(secs / 60), s = secs % 60;
+  el.textContent = `${m}:${String(s).padStart(2, '0')}`;
+  el.style.color = _timerColor(secs);
+}
+function startQTimer() {
+  clearInterval(_timerInterval);
+  _timerStart = Date.now();
+  updateTimerEl(0);
+  _timerInterval = setInterval(() => {
+    updateTimerEl(Math.floor((Date.now() - _timerStart) / 1000));
+  }, 500);
+}
+function stopQTimer() {
+  clearInterval(_timerInterval);
+  _timerInterval = null;
+  if (_timerStart === null) return 0;
+  const elapsed = Math.round((Date.now() - _timerStart) / 1000);
+  _timerStart = null;
+  return elapsed;
+}
+function setTimerPref(on) {
+  timerEnabled = on;
+  localStorage.setItem('p1quiz_timer', on ? '1' : '0');
+  ['timerToggleSetup', 'timerToggleAr'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.checked = on;
+  });
+}
+function syncTimerCheckboxes() {
+  ['timerToggleSetup', 'timerToggleAr'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.checked = timerEnabled;
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2499,6 +2561,18 @@ function renderQ() {
   const [text, opts, correct, expl] = q;
   const correctIdx = ['A','B','C','D','E'].indexOf(correct);
   const saved = state.answers[i];
+
+  // Timer: stop any running interval, then start fresh or show frozen time
+  const timerEl = document.getElementById('qTimer');
+  if (timerEl) timerEl.style.display = timerEnabled ? '' : 'none';
+  stopQTimer();
+  if (timerEnabled) {
+    if (saved !== undefined) {
+      updateTimerEl(state.questionTimes[i] || 0);
+    } else {
+      startQTimer();
+    }
+  }
 
   // Header / progress
   const answered = Object.keys(state.answers).length;
@@ -2578,6 +2652,7 @@ function renderQ() {
 function selectAnswer(i) {
   if (state.answers[state.currentQ] !== undefined) return;
   state.answers[state.currentQ] = i;
+  if (timerEnabled) state.questionTimes[state.currentQ] = stopQTimer();
   saveResume(); // persist progress on every answer
   if(typeof shaderAnswerFlash==='function'){
     const cIdx=['A','B','C','D','E'].indexOf(state.questions[state.currentQ].q[2]);
@@ -2621,6 +2696,7 @@ function savePartial() {
 }
 
 function finishAttempt() {
+  stopQTimer();
   addRecentQ(correctlyAnsweredItems());
   saveAttemptRecord();
   clearResume(); // attempt done — remove resume tile
@@ -2643,6 +2719,8 @@ function saveAttemptRecord() {
     if (ok) lecBreakdown[item.lecture].correct++;
   });
   const answered = Object.keys(state.answers).length;
+  const timedQs = Object.values(state.questionTimes || {});
+  const avgTimeSecs = timedQs.length ? Math.round(timedQs.reduce((a,b) => a+b, 0) / timedQs.length) : null;
   const record = {
     id: state.attemptId,
     blockId: state.blockId,
@@ -2651,7 +2729,8 @@ function saveAttemptRecord() {
     total, answered, correct,
     pct: answered ? Math.round(correct/answered*100) : 0,
     isRandom: state.isRandom,
-    breakdown: lecBreakdown
+    breakdown: lecBreakdown,
+    avgTimeSecs
   };
   // Don't add duplicate
   if (!allAttempts.find(a => a.id === state.attemptId)) {
@@ -2724,6 +2803,16 @@ function showResults() {
     });
   }
 
+  let avgTimeStat = '';
+  if (timerEnabled) {
+    const times = Object.values(state.questionTimes);
+    if (times.length > 0) {
+      const avgSecs = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+      const tm = Math.floor(avgSecs / 60), ts = avgSecs % 60;
+      avgTimeStat = `<div class="scard"><div class="n" style="font-size:18px">${tm}:${String(ts).padStart(2,'0')}</div><div class="l">Avg / question</div></div>`;
+    }
+  }
+
   document.getElementById('resContent').innerHTML = `
     <div class="result-banner ${bannerCls}">
       <div class="result-score">${answered ? pct + '%' : '–'}</div>
@@ -2734,6 +2823,7 @@ function showResults() {
       <div class="scard"><div class="n">${answered}</div><div class="l">Answered</div></div>
       <div class="scard"><div class="n">${correct}</div><div class="l">Correct</div></div>
       <div class="scard"><div class="n" style="color:${pct>=70?'var(--green)':pct>=50?'#BA7517':'var(--red)'}">${answered?pct+'%':'–'}</div><div class="l">Score</div></div>
+      ${avgTimeStat}
     </div>
     <div class="lec-breakdown">
       <h3>Marks lost by lecture — focus your revision here</h3>
@@ -2812,16 +2902,22 @@ function showHistory() {
     html += `<div class="trend-chart" title="Score trend (older → newer)">${chartBars}</div>`;
 
     html += `<table class="htable" style="width:100%;margin-bottom:1rem">
-      <thead><tr><th>Date</th><th>Score</th><th>Correct</th><th>Mode</th><th>Qs</th></tr></thead><tbody>`;
+      <thead><tr><th>Date</th><th>Score</th><th>Correct</th><th>Mode</th><th>Qs</th><th>Avg time</th></tr></thead><tbody>`;
     [...attempts].reverse().forEach(a => {
       const date = new Date(a.date).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit'});
       const pillCls = a.pct >= 70 ? 'pill-g' : a.pct >= 50 ? 'pill-a' : 'pill-r';
+      let avgTimeCell = '<td style="font-size:11px;color:var(--ink-dim)">—</td>';
+      if (a.avgTimeSecs != null) {
+        const tm = Math.floor(a.avgTimeSecs / 60), ts = a.avgTimeSecs % 60;
+        avgTimeCell = `<td style="font-size:11px;font-family:'JetBrains Mono',monospace">${tm}:${String(ts).padStart(2,'0')}</td>`;
+      }
       html += `<tr>
         <td style="font-size:11px">${date}</td>
         <td><span class="score-pill ${pillCls}">${a.pct}%</span></td>
         <td style="font-size:12px">${a.correct}/${a.answered}</td>
         <td style="font-size:11px">${a.isRandom ? '🎲 Random' : 'All'}</td>
         <td style="font-size:12px">${a.total}</td>
+        ${avgTimeCell}
       </tr>`;
     });
     html += '</tbody></table>';
@@ -3233,6 +3329,7 @@ function showHome() { buildHome(); showScreen('home'); }
 
 // Init
 buildHome();
+syncTimerCheckboxes();
 
 
 // ═══════════════════════════════════════════════════════════════
