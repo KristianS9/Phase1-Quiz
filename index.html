@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@300;400;500;600&family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Phase 1 MCQ Quiz</title>
 <link rel="stylesheet" href="styles.css">
@@ -41,6 +41,11 @@
     </div>
   </div>
   <div class="topbar-right">
+    <nav class="mode-toggle" aria-label="Theme">
+      <button data-mode="midnight">◐ Midnight</button>
+      <button data-mode="lab">◑ Lab</button>
+      <button data-mode="vellum">◒ Vellum</button>
+    </nav>
     <span>Block Study</span>
     <span class="live">● Live</span>
     <span id="topClock" class="mono">—</span>
@@ -59,7 +64,7 @@
 <!-- ── HOME ── -->
 <div id="home" class="screen active">
   <h1>Kristian's Phase 1 MCQ Quiz<span class="version-badge" id="versionBadge"></span></h1>
-  <div class="sub-line">776 questions · 89 lectures · 5 blocks</div>
+  <div class="sub-line">992 questions · 102 lectures · 5 blocks</div>
   <div id="updateNag">
     <span class="nag-icon">🔔</span>
     <div class="nag-body">
@@ -68,13 +73,14 @@
     </div>
     <button class="nag-close" onclick="document.getElementById('updateNag').classList.remove('visible')" title="Dismiss">✕</button>
   </div>
-  <p class="sub">Always up to date at <a href="https://KristianS9.github.io/Phase1-Quiz/" target="_blank" style="color:inherit;font-weight:600;">https://KristianS9.github.io/Phase1-Quiz/</a>&thinsp; · &thinsp;Wrong answers show extracts directly from Kristian's Notion notes. Anything you wish this tool included? Feedback to Kristian to get it added. If you find this useful, please let Kristian know (or buy him a beer).</p>
+  <p class="sub">Always up to date at <a href="https://KristianS9.github.io/Phase1-Quiz/" target="_blank" style="color:inherit;font-weight:600;">https://KristianS9.github.io/Phase1-Quiz/</a>&thinsp; · &thinsp;Wrong answers show extracts directly from Kristian's Notion notes. Anything you wish this tool included? Feedback to Kristian to get it added. If you find this useful, please let Kristian know.</p>
   <div class="how-it-works">
     <strong>How it works</strong>
     <ul>
       <li>Choose a block to revise, then pick a mode — all questions in order, a random selection, or every question across all blocks shuffled at once.</li>
-      <li>After each answer, wrong responses show an explanation drawn from the relevant Notion notes so you can read the source material directly.</li>
+      <li>After each answer, wrong responses show an explanation drawn from the relevant Notion notes so you can read the source material directly.If you disagree with an answer, or think it is out of scope for Phase 1, please report it with the 'Report Question' feature.</li>
       <li>Your scores are tracked per lecture, so the summary stats screen shows exactly which topics need the most revision. Please note: This currently only includes CTB, SocPop & VLE - Anatomy pending.</li>
+      <li>Random mode remembers which questions you answered correctly and deprioritises them in your next session, so fresh and previously-missed questions come first — a lightweight spaced-repetition effect.</li>
       <li>All scores are stored locally in your own browser — nothing is shared. Bookmark <a href="https://KristianS9.github.io/Phase1-Quiz/" target="_blank" style="color:inherit;">https://KristianS9.github.io/Phase1-Quiz/</a> to always access the latest version.</li>
       <li>28/04: Formative questions are now live, some that require images have been stripped out.</li>
       <li>Should you experience any issues with this tool, please contact me at kristian.sorensen-hollywood@live.warwick.ac.uk</li>
@@ -99,6 +105,13 @@
     <span class="arb-icon">🎲</span>
   </button>
   <div class="block-grid" id="bGrid"></div>
+  <button class="eq2-btn" onclick="showEquations()">
+    <div class="arb-left">
+      <span class="arb-title">📐 Block 2 Equations — Study &amp; Practice</span>
+      <span class="arb-sub">Study all 20 equations with explanations · then test yourself with 15 randomised calculation questions — values change every session.</span>
+    </div>
+    <span class="arb-icon">∑</span>
+  </button>
   <div class="home-actions">
     <button class="btn" onclick="showHistory()">📊 Attempt history</button>
     <button class="btn" onclick="showAllStats()">📈 Summary stats</button>
@@ -124,9 +137,27 @@
       <label>Custom number</label>
       <input type="number" id="arCustom" min="1" max="9999" placeholder="e.g. 40" oninput="arSelectCount(null, this.value)">
     </div>
+    <div class="frow frow-toggle" style="margin-top:0.75rem">
+      <label for="timerToggleAr">Question timer</label>
+      <input type="checkbox" id="timerToggleAr" onchange="setTimerPref(this.checked)">
+    </div>
     <div class="modal-btns">
       <button class="btn" onclick="closeArModal()">Cancel</button>
       <button class="btn btn-green" id="arStartBtn" onclick="confirmAllRandom()" disabled>Start quiz</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SAQ TOPIC PICKER ── -->
+<div id="saqPickerModal" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <h2>High Yield SocPop — SAQ</h2>
+    <p style="font-size:13px;color:var(--ink-dim);margin:0 0 1.2rem">58 short-answer questions in exam format. Type your answer, reveal the model answer, then rate yourself.</p>
+    <button class="saq-pick-btn" onclick="startSaq('all')">All Topics <span>58 Qs</span></button>
+    <button class="saq-pick-btn" onclick="startSaq('pop')">Population Science <span>38 Qs</span></button>
+    <button class="saq-pick-btn" onclick="startSaq('soc')">Sociology <span>20 Qs</span></button>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeSaqPicker()">Cancel</button>
     </div>
   </div>
 </div>
@@ -145,6 +176,10 @@
     <div id="randomRow" style="display:none" class="frow">
       <label>Number of questions</label>
       <input type="number" id="numQ" value="20" min="1" max="999">
+    </div>
+    <div class="frow frow-toggle">
+      <label for="timerToggleSetup">Question timer</label>
+      <input type="checkbox" id="timerToggleSetup" onchange="setTimerPref(this.checked)">
     </div>
     <div class="frow">
       <label>Lectures to include</label>
@@ -167,6 +202,7 @@
     <div class="quiz-header-left">
       <h2 id="qTitle"></h2>
       <div class="quiz-meta" id="qMeta"></div>
+      <div id="qTimer" class="q-timer" style="display:none">0:00</div>
     </div>
     <button class="btn" onclick="savePartial(); saveResume(); showHome();">Exit</button>
   </div>
@@ -224,6 +260,38 @@
   </div>
   <p class="sub">All your quiz attempts, oldest to newest. Track your improvement over time.</p>
   <div id="hContent"></div>
+</div>
+
+<!-- ── EQUATIONS ── -->
+<div id="equations" class="screen">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+    <h2>Block 2 Equations</h2>
+    <button class="btn" onclick="showHome()">← Home</button>
+  </div>
+  <div class="tabs" id="eqTabs">
+    <button class="tab on" id="eqTab_study"    onclick="showEqTab('study')">Study</button>
+    <button class="tab"    id="eqTab_practice" onclick="showEqTab('practice')">Practice</button>
+  </div>
+  <div id="eqStudy"></div>
+  <div id="eqPractice" style="display:none"></div>
+</div>
+
+<!-- ── SAQ RESULTS ── -->
+<div id="saqResults" class="screen">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+    <h2>SAQ Results</h2>
+    <button class="btn" onclick="showHome()">Home</button>
+  </div>
+  <div id="saqResContent"></div>
+</div>
+
+<!-- ── SAQ REVIEW ── -->
+<div id="saqReview" class="screen">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+    <h2>SAQ Review</h2>
+    <button class="btn" onclick="showScreen('saqResults')">← Back</button>
+  </div>
+  <div id="saqRevContent"></div>
 </div>
 
 </div><!-- .app -->
