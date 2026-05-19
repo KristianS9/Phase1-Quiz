@@ -47,6 +47,7 @@
   --sub: var(--ink-dim);
   --radius: 4px;
   --radius-sm: 2px;
+  color-scheme: dark;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
