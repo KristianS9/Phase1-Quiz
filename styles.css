@@ -52,6 +52,7 @@
   --radius: 4px;
   --radius-sm: 2px;
   --overlay-bg: rgba(0,0,0,0.65);
+  color-scheme: dark;
 }
 
 /* ── Vellum theme (light) ───────────────────── */
@@ -79,6 +80,7 @@ body.vellum-mode {
   --purple-bg: rgba(138,79,44,0.08);  --purple-text: rgba(26,20,16,0.6);
   --overlay-bg: rgba(40,25,10,0.55);
   background: #efe5cb;
+  color-scheme: light;
 }
 
 /* ── Lab theme (clinical) ───────────────────── */
@@ -105,6 +107,7 @@ body.lab-mode {
   --blue-bg: rgba(127,227,208,0.10);  --blue-text: #7fe3d0;
   --purple-bg: rgba(180,120,255,0.10); --purple-text: rgba(230,236,242,0.7);
   --overlay-bg: rgba(0,0,0,0.65);
+  color-scheme: dark;
 }
 
 /* ── Hide WebGL shader in Vellum (uses CSS bg) ─ */
@@ -968,8 +971,8 @@ canvas { max-width: 100%; border-radius: var(--radius); }
 .flag-btn { font-family:var(--font-mono); font-size:9px; letter-spacing:0.18em; text-transform:uppercase; background:none; border:1px solid rgba(255,100,100,0.22); color:rgba(255,120,120,0.65); padding:4px 10px; cursor:pointer; border-radius:2px; transition:border-color 0.15s,color 0.15s; margin-top:10px; display:inline-flex; align-items:center; gap:6px; }
 .flag-btn:hover { border-color:rgba(255,100,100,0.45); color:var(--bad); }
 .flag-btn.flagged { border-color:rgba(255,100,100,0.40); color:var(--bad); opacity:0.7; cursor:default; pointer-events:none; }
-.report-overlay { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.72); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; padding:1rem; }
-.report-dialog { background:rgba(10,14,26,0.97); border:1px solid var(--card-border); border-radius:var(--radius); padding:24px 26px; width:min(460px,100%); box-shadow:0 40px 100px rgba(0,0,0,0.75); position:relative; }
+.report-overlay { position:fixed; inset:0; z-index:200; background:var(--overlay-bg); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; padding:1rem; }
+.report-dialog { background:var(--bg-1); border:1px solid var(--card-border); border-radius:var(--radius); padding:24px 26px; width:min(460px,100%); box-shadow:0 40px 100px rgba(0,0,0,0.75); position:relative; }
 .report-dialog::before,.report-dialog::after { content:""; position:absolute; width:14px; height:14px; border:1.2px solid var(--bad); }
 .report-dialog::before { top:-1px; left:-1px; border-right:none; border-bottom:none; }
 .report-dialog::after  { bottom:-1px; right:-1px; border-left:none; border-top:none; }
@@ -981,7 +984,7 @@ canvas { max-width: 100%; border-radius: var(--radius); }
 .reason-opt:hover { border-color:rgba(255,107,122,0.45); background:rgba(255,107,122,0.04); }
 .reason-opt input[type=radio] { accent-color:var(--bad); flex-shrink:0; }
 .reason-opt.selected { border-color:rgba(255,107,122,0.55); background:rgba(255,107,122,0.06); color:var(--ink); }
-.report-extra { width:100%; background:rgba(255,255,255,0.03); border:1px solid var(--card-border); border-radius:2px; color:var(--ink); font-family:var(--font-display); font-size:13px; padding:8px 12px; resize:vertical; min-height:60px; margin-bottom:14px; outline:none; transition:border-color 0.15s; }
+.report-extra { width:100%; background:var(--bg-0); border:1px solid var(--card-border); border-radius:2px; color:var(--ink); font-family:var(--font-display); font-size:13px; padding:8px 12px; resize:vertical; min-height:60px; margin-bottom:14px; outline:none; transition:border-color 0.15s; }
 .report-extra:focus { border-color:rgba(255,107,122,0.50); }
 .report-extra::placeholder { color:var(--ink-faint); }
 .report-footer { display:flex; justify-content:flex-end; gap:8px; }
