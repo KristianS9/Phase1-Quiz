@@ -1261,3 +1261,16 @@ canvas { max-width: 100%; border-radius: var(--radius); }
 .rev-partial   { color: var(--amber-text);  font-size: 12px; font-weight: 700; }
 .rev-wrong     { color: var(--bad);        font-size: 12px; font-weight: 700; }
 
+/* SAQ Stats tab */
+.stat-section-hd { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); margin: 0 0 12px; }
+.saq-topic-row td { font-size: .87rem; }
+.saq-acc-ok  { color: var(--ok);         font-weight: 600; }
+.saq-acc-mid { color: var(--amber-text); font-weight: 600; }
+.saq-acc-bad { color: var(--bad);        font-weight: 600; }
+.saq-retest-tag { font-size: .7rem; font-family: "JetBrains Mono", ui-monospace, monospace; color: var(--amber-text); border: 1px solid var(--amber-border); border-radius: 3px; padding: 1px 4px; vertical-align: middle; }
+.saq-miss-list { display: flex; flex-direction: column; gap: 12px; }
+.saq-miss-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+.saq-miss-topic { font-size: .75rem; font-family: "JetBrains Mono", ui-monospace, monospace; color: var(--amber-text); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .05em; }
+.saq-miss-q { font-size: .93rem; margin-bottom: 6px; line-height: 1.4; }
+.saq-miss-stats { font-size: .82rem; opacity: .85; }
+

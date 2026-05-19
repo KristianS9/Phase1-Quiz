@@ -2099,16 +2099,18 @@ function initTheme() {
 }
 // ────────────────────────────────────────────────────────────────
 
-let allAttempts = load('p1quiz_attempts', []);
-let allStats    = load('p1quiz_stats', {});    // {blockId: {lectureName: {answered, correct}}}
+let allAttempts    = load('p1quiz_attempts', []);
+let allStats       = load('p1quiz_stats', {});    // {blockId: {lectureName: {answered, correct}}}
+let allSaqAttempts = load('p1quiz_saq_attempts', []);
 
 // ── Question timer ──
 let timerEnabled = localStorage.getItem('p1quiz_timer') === '1';
 let _timerInterval = null;
 let _timerStart = null;
 
-function saveAttempts() { save('p1quiz_attempts', allAttempts); }
-function saveStats()    { save('p1quiz_stats', allStats); }
+function saveAttempts()    { save('p1quiz_attempts', allAttempts); }
+function saveStats()       { save('p1quiz_stats', allStats); }
+function saveSaqAttempts() { save('p1quiz_saq_attempts', allSaqAttempts); }
 
 function resetAll() {
   allAttempts = []; allStats = {};
@@ -3125,6 +3127,17 @@ function showAllStats() {
   };
   tabs.appendChild(arTab);
 
+  // SAQ tab
+  const saqTab = document.createElement('button');
+  saqTab.className = 'tab';
+  saqTab.textContent = 'SAQ';
+  saqTab.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+    saqTab.classList.add('on');
+    renderSaqStats();
+  };
+  tabs.appendChild(saqTab);
+
   renderStats(firstId);
 }
 
@@ -3438,6 +3451,132 @@ function renderAllRandomStats(period) {
   }
 }
 
+function renderSaqStats() {
+  const el = document.getElementById('sContent');
+
+  if (!allSaqAttempts.length) {
+    el.innerHTML = '<p style="color:var(--ink-dim);padding:24px 0">No SAQ sessions yet — complete a High Yield SocPop session to see your stats here.</p>';
+    return;
+  }
+
+  // ── Overall totals ──
+  const totSessions = allSaqAttempts.length;
+  const totQs    = allSaqAttempts.reduce((s, a) => s + a.total, 0);
+  const totGot   = allSaqAttempts.reduce((s, a) => s + a.got, 0);
+  const totPart  = allSaqAttempts.reduce((s, a) => s + a.partial, 0);
+  const totMiss  = allSaqAttempts.reduce((s, a) => s + a.missed, 0);
+  const totMarks = allSaqAttempts.reduce((s, a) => s + a.marks, 0);
+  const totMax   = allSaqAttempts.reduce((s, a) => s + a.maxMarks, 0);
+  const avgPct   = allSaqAttempts.length ? Math.round(allSaqAttempts.reduce((s, a) => s + a.pct, 0) / allSaqAttempts.length) : 0;
+  const bestPct  = allSaqAttempts.length ? Math.max(...allSaqAttempts.map(a => a.pct)) : 0;
+
+  // ── Per-topic breakdown ──
+  const topicMap = {};
+  allSaqAttempts.forEach(a => {
+    (a.results || []).forEach(r => {
+      if (!topicMap[r.topic]) topicMap[r.topic] = { got: 0, partial: 0, missed: 0, attempts: 0 };
+      topicMap[r.topic][r.rating]++;
+      topicMap[r.topic].attempts++;
+    });
+  });
+  const topicRows = Object.entries(topicMap)
+    .map(([topic, d]) => ({ topic, ...d, pct: Math.round(d.got / d.attempts * 100) }))
+    .sort((a, b) => a.pct - b.pct);
+
+  const topicTableRows = topicRows.map(t => {
+    const cls = t.pct >= 70 ? 'ok' : t.pct >= 50 ? 'mid' : 'bad';
+    return `<tr class="saq-topic-row">
+      <td>${t.topic}</td>
+      <td style="text-align:center">${t.attempts}</td>
+      <td style="text-align:center;color:var(--ok)">${t.got}</td>
+      <td style="text-align:center;color:var(--amber-text)">${t.partial}</td>
+      <td style="text-align:center;color:var(--bad)">${t.missed}</td>
+      <td style="text-align:center" class="saq-acc-${cls}">${t.pct}%</td>
+    </tr>`;
+  }).join('');
+
+  // ── Most-missed questions ──
+  const qMap = {};
+  allSaqAttempts.forEach(a => {
+    (a.results || []).forEach(r => {
+      if (!qMap[r.id]) qMap[r.id] = { got: 0, partial: 0, missed: 0, attempts: 0, topic: r.topic };
+      qMap[r.id][r.rating]++;
+      qMap[r.id].attempts++;
+    });
+  });
+  const worst = Object.entries(qMap)
+    .map(([id, d]) => ({ id: +id, ...d, pct: Math.round(d.got / d.attempts * 100) }))
+    .filter(x => x.attempts >= 2)
+    .sort((a, b) => a.pct - b.pct)
+    .slice(0, 10);
+
+  const worstHtml = worst.length ? worst.map(w => {
+    const q = SAQ_QUESTIONS.find(sq => sq.id === w.id);
+    const qText = q ? q.question : '(unknown)';
+    return `<div class="saq-miss-item">
+      <div class="saq-miss-topic">${w.topic}</div>
+      <div class="saq-miss-q">${qText}</div>
+      <div class="saq-miss-stats">
+        <span style="color:var(--ok)">✓ ${w.got}</span> &nbsp;
+        <span style="color:var(--amber-text)">~ ${w.partial}</span> &nbsp;
+        <span style="color:var(--bad)">✗ ${w.missed}</span> &nbsp;
+        <span style="opacity:.6">(${w.attempts} attempts, ${w.pct}% got)</span>
+      </div>
+    </div>`;
+  }).join('') : '<p style="color:var(--ink-dim);font-size:.9rem">Answer each question at least twice to see weak spots.</p>';
+
+  // ── Session history ──
+  const histRows = [...allSaqAttempts].reverse().map((a, i) => {
+    const d = new Date(a.date);
+    const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const filterLabel = a.filter === 'pop' ? 'Pop' : a.filter === 'soc' ? 'Soc' : 'All';
+    const retestTag = a.isRetest ? ' <span class="saq-retest-tag">Retest</span>' : '';
+    const pctCls = a.pct >= 70 ? 'ok' : a.pct >= 50 ? 'mid' : 'bad';
+    return `<tr>
+      <td>${dateStr}</td>
+      <td>${filterLabel}${retestTag}</td>
+      <td style="text-align:center">${a.total}</td>
+      <td style="text-align:center" class="saq-acc-${pctCls}">${a.pct}%</td>
+      <td style="text-align:center;color:var(--ok)">${a.got}</td>
+      <td style="text-align:center;color:var(--amber-text)">${a.partial}</td>
+      <td style="text-align:center;color:var(--bad)">${a.missed}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="stat-grid" style="margin-bottom:24px">
+      <div class="scard"><div class="n">${totSessions}</div><div class="l">Sessions</div></div>
+      <div class="scard"><div class="n">${totQs}</div><div class="l">Questions</div></div>
+      <div class="scard"><div class="n">${avgPct}%</div><div class="l">Avg Marks</div></div>
+      <div class="scard"><div class="n">${bestPct}%</div><div class="l">Best Session</div></div>
+    </div>
+    <div class="stat-grid" style="margin-bottom:32px">
+      <div class="scard"><div class="n" style="color:var(--ok)">${totGot}</div><div class="l">Got it</div></div>
+      <div class="scard"><div class="n" style="color:var(--amber-text)">${totPart}</div><div class="l">Partial</div></div>
+      <div class="scard"><div class="n" style="color:var(--bad)">${totMiss}</div><div class="l">Missed</div></div>
+      <div class="scard"><div class="n">${totMax ? Math.round(totMarks / totMax * 100) : 0}%</div><div class="l">Overall Marks</div></div>
+    </div>
+
+    <h3 class="stat-section-hd">Topic Breakdown</h3>
+    <div style="overflow-x:auto;margin-bottom:32px">
+      <table class="htable">
+        <thead><tr><th>Topic</th><th style="text-align:center">Attempts</th><th style="text-align:center">Got</th><th style="text-align:center">Part</th><th style="text-align:center">Missed</th><th style="text-align:center">Acc.</th></tr></thead>
+        <tbody>${topicTableRows}</tbody>
+      </table>
+    </div>
+
+    <h3 class="stat-section-hd">Most Missed Questions</h3>
+    <div class="saq-miss-list" style="margin-bottom:32px">${worstHtml}</div>
+
+    <h3 class="stat-section-hd">Session History</h3>
+    <div style="overflow-x:auto">
+      <table class="htable">
+        <thead><tr><th>Date</th><th>Topic</th><th style="text-align:center">Qs</th><th style="text-align:center">Marks %</th><th style="text-align:center">Got</th><th style="text-align:center">Part</th><th style="text-align:center">Missed</th></tr></thead>
+        <tbody>${histRows}</tbody>
+      </table>
+    </div>`;
+}
+
 // ═══════════════════════════════════════════════════════════════
 // HIGH YIELD SOCPOP — SAQ MODE LOGIC
 // ═══════════════════════════════════════════════════════════════
@@ -3592,7 +3731,6 @@ function rateSaqStandalone(rating) {
 }
 
 function showSaqResults() {
-  showScreen('saqResults');
   const results = saqState.results;
   const total = results.length;
   const got     = results.filter(r => r.rating === 'got').length;
@@ -3606,6 +3744,24 @@ function showSaqResults() {
   }, 0);
   const marksRounded = Math.round(earnedMarks * 2) / 2;
   const pct = totalMarks ? Math.round(earnedMarks / totalMarks * 100) : 0;
+
+  // Persist session to localStorage
+  allSaqAttempts.push({
+    date:     new Date().toISOString(),
+    filter:   saqState.filter,
+    isRetest: !!saqState.isRetest,
+    total, got, partial, missed,
+    marks:    marksRounded,
+    maxMarks: totalMarks,
+    pct,
+    results: results.map(r => {
+      const q = SAQ_QUESTIONS.find(sq => sq.id === r.id);
+      return { id: r.id, topic: q ? q.topic : '', rating: r.rating, marks: r.marks };
+    })
+  });
+  saveSaqAttempts();
+
+  showScreen('saqResults');
   const bannerCls = pct >= 70 ? 'result-good' : pct >= 50 ? 'result-mid' : 'result-bad';
   const weakCount = partial + missed;
   const retestBtn = weakCount > 0
