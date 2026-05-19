@@ -1118,3 +1118,146 @@ canvas { max-width: 100%; border-radius: var(--radius); }
   width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;
 }
 
+/* ── HIGH YIELD SOCPOP — SAQ MODE ─────────────────────────── */
+
+/* SAQ tile in home grid — amber accent override on bcard */
+.saq-tile { border-color: var(--amber-border); }
+.saq-tile:hover { border-color: rgba(255,200,100,0.55) !important; }
+.saq-tile .bcard-name { color: var(--amber-text); }
+
+/* Marks badge */
+.saq-marks-badge {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--amber-text); background: var(--amber-bg);
+  border: 1px solid var(--amber-border); border-radius: 999px;
+  padding: 2px 10px; white-space: nowrap;
+}
+
+/* SAQ question header row */
+.saq-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+
+/* Answer textarea */
+.saq-input-area { margin-top: 18px; }
+.saq-input-label {
+  display: block;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9.5px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--ink-dim); margin-bottom: 8px;
+}
+.saq-input {
+  width: 100%; min-height: 110px; resize: vertical;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: var(--radius);
+  color: var(--ink);
+  padding: 10px 13px;
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 14px; line-height: 1.6;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.saq-input:focus { border-color: var(--amber-border); box-shadow: 0 0 0 2px rgba(255,200,100,0.12); }
+.saq-input::placeholder { color: var(--ink-faint); }
+
+/* Reveal button */
+.saq-reveal-btn {
+  margin-top: 14px; width: 100%;
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  background: transparent; border: 1px solid var(--amber-border);
+  color: var(--amber-text); padding: 11px 20px;
+  cursor: pointer; border-radius: var(--radius);
+  transition: background 0.18s;
+}
+.saq-reveal-btn:hover { background: var(--amber-bg); }
+
+/* Reveal section — compare panel */
+.saq-reveal-section { margin-top: 18px; }
+.saq-compare-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;
+}
+@media (max-width: 600px) { .saq-compare-row { grid-template-columns: 1fr; } }
+.saq-compare-label {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--ink-faint); margin-bottom: 6px;
+}
+.saq-your-text {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius); padding: 10px 13px;
+  font-size: 13px; color: var(--ink-dim); white-space: pre-wrap; line-height: 1.6; min-height: 60px;
+}
+.saq-model-answer {
+  background: rgba(126,240,180,0.06); border: 1px solid rgba(126,240,180,0.25);
+  border-radius: var(--radius); padding: 10px 13px;
+  font-size: 13px; color: var(--ink); white-space: pre-wrap; line-height: 1.6;
+}
+
+/* Rating buttons */
+.saq-rating-label {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9.5px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--ink-dim); margin-bottom: 10px;
+}
+.saq-rating-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+.saq-rating-btn {
+  flex: 1; min-width: 90px;
+  font-family: "Chakra Petch", sans-serif; font-size: 13px; font-weight: 700;
+  padding: 11px 16px; border-radius: var(--radius); border: 1px solid;
+  cursor: pointer; transition: background 0.15s, transform 0.1s; letter-spacing: 0.04em;
+}
+.saq-rating-btn:hover { transform: translateY(-1px); }
+.saq-rating-btn.missed  { background: rgba(255,107,122,0.12); border-color: rgba(255,107,122,0.45); color: var(--bad); }
+.saq-rating-btn.missed:hover  { background: rgba(255,107,122,0.22); }
+.saq-rating-btn.partial { background: rgba(255,200,100,0.10); border-color: var(--amber-border); color: var(--amber-text); }
+.saq-rating-btn.partial:hover { background: rgba(255,200,100,0.20); }
+.saq-rating-btn.got     { background: rgba(126,240,180,0.10); border-color: rgba(126,240,180,0.40); color: var(--ok); }
+.saq-rating-btn.got:hover     { background: rgba(126,240,180,0.20); }
+
+/* Locked rated state (All Random re-view) */
+.saq-rated {
+  display: inline-block; margin-top: 12px; padding: 4px 14px;
+  border-radius: 999px; font-size: 12px; font-weight: 700;
+}
+.saq-rated-got     { background: rgba(126,240,180,0.12); color: var(--ok);          border: 1px solid rgba(126,240,180,0.30); }
+.saq-rated-partial { background: var(--amber-bg);        color: var(--amber-text);   border: 1px solid var(--amber-border); }
+.saq-rated-missed  { background: rgba(255,107,122,0.12); color: var(--bad);          border: 1px solid rgba(255,107,122,0.35); }
+
+/* SAQ topic picker option buttons */
+.saq-pick-btn {
+  width: 100%; background: transparent; border: 1px solid var(--card-border);
+  border-radius: var(--radius); color: var(--ink);
+  padding: 12px 16px; font-family: "Chakra Petch", sans-serif;
+  font-size: 13px; font-weight: 600; text-align: left; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+.saq-pick-btn:hover { border-color: var(--amber-border); background: var(--amber-bg); }
+.saq-pick-btn span { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; color: var(--ink-faint); letter-spacing: 0.12em; }
+
+/* SAQ results action buttons */
+.saq-results-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 1.5rem; }
+.btn-amber { border-color: var(--amber-border); color: var(--amber-text); }
+.btn-amber:hover { background: var(--amber-bg); border-color: var(--amber-border); }
+
+/* SAQ review items */
+.saq-rev-details summary {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--ink-faint); cursor: pointer; margin-top: 8px;
+  transition: color 0.15s;
+}
+.saq-rev-details summary:hover { color: var(--ink-dim); }
+.saq-rev-details .saq-model-answer { margin-top: 8px; }
+.rev-item-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.rev-item-num  { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; color: var(--ink-faint); }
+.rev-topic     { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; color: var(--accent); letter-spacing: 0.08em; }
+.rev-marks     { font-size: 10px; color: var(--ink-faint); }
+.rev-question  { font-size: 14px; color: var(--ink); line-height: 1.5; }
+.rev-correct   { color: var(--ok);         font-size: 12px; font-weight: 700; }
+.rev-partial   { color: var(--amber-text);  font-size: 12px; font-weight: 700; }
+.rev-wrong     { color: var(--bad);        font-size: 12px; font-weight: 700; }
+
