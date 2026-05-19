@@ -55,9 +55,11 @@ document.getElementById('gateEmail').addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════════════
 // VERSION & CHANGELOG
 // ═══════════════════════════════════════════════════════════════
-const QUIZ_VERSION = "v25.3";
+const QUIZ_VERSION = "v25.4";
 
 const CHANGELOG = [
+  { version:"v25.4", date:"19 May 2026", summary:"High Yield SocPop — 65 SAQ questions with free-text reveal and self-marking",
+    changes:["New 'High Yield SocPop' tile on the home screen — 65 short-answer questions covering Population Science and Sociology topics across all blocks","True exam-format SAQ mode: type your answer in a text box, reveal the model answer, then self-rate as Got it / Partial / Missed","Pre-quiz topic filter: choose Population Science (45 Qs), Sociology (20 Qs), or All 65 questions","Retest Weak Questions button on results screen — immediately reruns any Partial or Missed questions for targeted drill-down","Review screen shows all attempted questions with model answers (expand/collapse) and self-rating","SAQ questions included in All Random mode — free-text UI renders inline alongside MCQs","Spaced-repetition for SAQ: 'Got it' questions enter cooldown and appear less frequently; Partial/Missed stay fresh","Question wording and model answers preserved verbatim from the High Yield SocPop question bank"] },
   { version:"v25.3", date:"17 May 2026", summary:"Question timer — per-question stopwatch with colour feedback and avg-time stat",
     changes:["Added optional question timer — toggle it on in the mode-selection dialog before starting a quiz","Timer starts from 0:00 when each question appears; colour shifts green → amber → red as it approaches 1 minute, then keeps counting past 60 s","Timer freezes at the recorded time when you revisit an already-answered question; resets to 0:00 on new unanswered questions","Results page shows an 'Avg / question' stat card when the timer is enabled","Attempt history table now shows avg time per question for timed attempts","Timer preference is saved to localStorage and remembered across sessions"] },
   { version:"v25.2", date:"15 May 2026", summary:"Three-theme design system — Midnight, Vellum, Lab",
@@ -1975,6 +1977,77 @@ const BLOCKS = {
 // ═══════════════════════════════════════════════════════════════
 // STATE & STORAGE
 // ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// HIGH YIELD SOCPOP — SAQ DATA
+// ═══════════════════════════════════════════════════════════════
+const SAQ_QUESTIONS = [
+  { id:1, topic:"Pop: Prevalence", marks:1, question:"What is meant by the term 'prevalence'?", answer:"The proportion of a group that have a specified characteristic in a defined time period." },
+  { id:2, topic:"Pop: Prevalence", marks:3, question:"Name and briefly describe the three types of prevalence measure.", answer:"Point prevalence → at a specific point in time.\nPeriod prevalence → during a specified time frame (e.g. 1 year).\nLifetime prevalence → during a lifetime." },
+  { id:3, topic:"Pop: Prevalence", marks:2, question:"In a sample of 250 people, 25 have diabetes. What is the prevalence of diabetes in this group per 1000?", answer:"= (No. with condition / Total population) × 1000\n= (25 / 250) × 1000\n= 100 per 1000." },
+  { id:4, topic:"Pop: Prevalence", marks:3, question:"Name four factors that affect prevalence.", answer:"Incidence of the disease; duration of the disease; migration of cases in/out; mortality of cases. (Any four accepted.)" },
+  { id:5, topic:"Pop: Incidence", marks:1, question:"What is meant by the term 'incidence'?", answer:"The rate of new cases of a disease occurring in a specific population at risk over a particular period of time." },
+  { id:6, topic:"Pop: Incidence", marks:2, question:"State two ways in which the calculation of incidence differs from prevalence.", answer:"1. New cases only (not all existing cases).\n2. Population at risk (not the whole population).\n3. It is a rate, i.e. divided by time (not just a proportion). (Any two.)" },
+  { id:7, topic:"Pop: Incidence", marks:3, question:"4000 people are recruited in a study. Over the next 5 years, 800 people develop heart disease. No one had heart disease at the start. Assume everyone was followed up for five years. What is the annual incidence of heart disease per 1000?", answer:"Formula: [No. new cases / (population at risk × no. of years)] × 1000\n= [800 / (4000 × 5)] × 1000\n= 40 per 1000 people per year." },
+  { id:8, topic:"Pop: Confidence Intervals", marks:2, question:"What is a confidence interval? For a RR or OR, what is the null value used to determine statistical significance?", answer:"A confidence interval is a measure of uncertainty / a range of plausible values for the truth.\nThe null value for RR and OR is 1." },
+  { id:9, topic:"Pop: Confidence Intervals", marks:3, question:"A study finds that coffee drinkers have an increased risk of heart disease: RR 1.5, 95% CI (1.2–1.8). Interpret these results.", answer:"RR 1.5 → 50% increased risk of heart disease in coffee drinkers vs non-drinkers.\n95% CI → the true increase in risk could plausibly be between 20% and 80%.\nStatistically significant → CI does not include the null value of 1." },
+  { id:10, topic:"Pop: Confidence Intervals", marks:2, question:"A survey finds that 15% of teenagers use vapes (95% CI 10–20%). Interpret these results.", answer:"15% of teenagers used vapes in this survey.\nThe true prevalence is likely to be between 10% and 20%." },
+  { id:11, topic:"Pop: Data Sources", marks:2, question:"Which data source can be used to identify: (a) hospital admissions with lower respiratory tract infection; (b) the number of people with hypertension in each GP practice?", answer:"(a) Hospital Episode Statistics (HES).\n(b) Quality and Outcomes Framework (QOF)." },
+  { id:12, topic:"Pop: Data Sources", marks:2, question:"Which coding system would be used to classify: (a) cases of lower respiratory tract infection; (b) hip replacements?", answer:"(a) ICD-10 (International Classification of Diseases).\n(b) OPCS-4 (Operating Procedure Codes Supplement)." },
+  { id:13, topic:"Pop: Data Sources", marks:1, question:"Which organisation should notifiable diseases be reported to?", answer:"UK Health Security Agency (UKHSA)." },
+  { id:14, topic:"Pop: Study Design", marks:2, question:"With reference to 'exposure' and 'outcome', briefly describe a case-control study.", answer:"Sample people with a disease (cases) and without it (controls), then look back at their exposures of interest." },
+  { id:15, topic:"Pop: Study Design", marks:2, question:"With reference to 'exposure' and 'outcome', briefly describe a cohort study.", answer:"Sample people with and without an exposure of interest, then look forward to see if they develop the outcome of interest." },
+  { id:16, topic:"Pop: Study Design", marks:2, question:"With reference to 'exposure' and 'outcome', briefly describe a cross-sectional study.", answer:"Sample people based on criteria other than the exposure or outcome, then identify whether they have the exposure and outcome of interest at the same point in time." },
+  { id:17, topic:"Pop: Study Design", marks:1, question:"What is an ecological study?", answer:"An observational study where the unit of analysis is a group (e.g. school, region, GP practice) and not individuals." },
+  { id:18, topic:"Pop: Study Design", marks:1, question:"Put the following study designs in order from most to least reliable according to the hierarchy of evidence: cohort, case-control, cross-sectional, ecological.", answer:"Most reliable → least reliable: Cohort → Case-control → Cross-sectional → Ecological." },
+  { id:19, topic:"Pop: Study Design", marks:1, question:"In a study to test efficacy of a new analgesic, participants are allocated to either the new analgesic or a standard one with equal probability. Which study design is this?", answer:"Randomised controlled trial (RCT)." },
+  { id:20, topic:"Pop: Study Design", marks:1, question:"A study explores the association between folate and orofacial cleft (OFC). Mothers of babies with OFC and without OFC are recruited and asked about their previous folate supplement use. Which study design is this?", answer:"Case-control study." },
+  { id:21, topic:"Pop: Study Design", marks:1, question:"Office workers and factory workers are recruited and followed up for 10 years for the development of stroke. Which study design is this?", answer:"(Prospective) Cohort study." },
+  { id:22, topic:"Pop: RCT", marks:2, question:"What is meant by the term 'randomised' and 'controlled' in a randomised controlled trial?", answer:"Randomised → participants have an equal chance of being allocated to either/any group.\nControlled → there is a second group treated as similarly as possible except they do not receive the intervention under investigation." },
+  { id:23, topic:"Pop: RCT", marks:1, question:"Give an advantage of randomisation.", answer:"Ensures both groups have similar characteristics (reduces confounding)." },
+  { id:24, topic:"Pop: RCT", marks:1, question:"What is meant by a placebo?", answer:"An inert substance identical in appearance/taste etc. to the substance under investigation (or a sham intervention)." },
+  { id:25, topic:"Pop: RCT", marks:2, question:"What is meant by 'blinding'?", answer:"Blinding is where patients and/or clinicians and/or outcome assessors are unaware of treatment allocation.\nSingle blind → one of the above groups does not know.\nDouble blind → two or more groups do not know.\nAim → to remove differential placebo effect between groups that could introduce bias." },
+  { id:26, topic:"Pop: RCT", marks:2, question:"What is the difference between a 'per-protocol' (as-treated) analysis and an 'intention-to-treat' analysis?", answer:"Per-protocol → only analyse participants who completed the trial as intended, in their original groups.\nITT → include all recruited participants in their original groups, regardless of whether they completed the trial or swapped groups." },
+  { id:27, topic:"Pop: RCT", marks:1, question:"What is meant by 'clinical equipoise'?", answer:"Genuine uncertainty about whether treatment or non-treatment is better." },
+  { id:28, topic:"Pop: RCT", marks:1, question:"What do we call a trial where participants can choose whether they have the intervention or control?", answer:"Non-randomised controlled trial." },
+  { id:29, topic:"Pop: RCT", marks:1, question:"Which study design sits at the top of the hierarchy of evidence?", answer:"Systematic review (± meta-analysis)." },
+  { id:30, topic:"Pop: Systematic Reviews", marks:2, question:"On a forest plot, what do the error bars show, and what does the size of each square represent?", answer:"Error bars → 95% confidence intervals (level of uncertainty).\nSquare size → sample size (weighting of the study)." },
+  { id:31, topic:"Pop: Systematic Reviews", marks:1, question:"What does the I² result represent in a forest plot?", answer:"Heterogeneity (the degree of variability between study results)." },
+  { id:32, topic:"Pop: Systematic Reviews", marks:3, question:"From a forest plot with pooled RR 0.87, 95% CI 0.41–1.87: (a) What is the pooled effect size and CI? (b) Is the result statistically significant? Justify your answer.", answer:"(a) Effect size: RR 0.87; 95% CI: 0.41 to 1.87.\n(b) Not statistically significant — the 95% CI includes the null value of 1 (also p > 0.05)." },
+  { id:33, topic:"Pop: Systematic Reviews", marks:2, question:"On a forest plot, which study has the most uncertainty, and why?", answer:"The study with the widest confidence interval (error bars). This is typically because it has the smallest sample size." },
+  { id:34, topic:"Pop: Interpreting Results", marks:3, question:"Name three reasons why a study might find a statistically significant result.", answer:"1. It reflects the truth.\n2. Chance.\n3. Bias.\n4. Confounding. (Any three.)" },
+  { id:35, topic:"Pop: Interpreting Results", marks:3, question:"What is meant by biological plausibility? List two other Bradford-Hill criteria.", answer:"Biological plausibility → a biological mechanism that explains the association is likely or demonstrated.\nOther criteria (any two, e.g.): Strength of association; Consistency of association; Temporal sequence; Dose-response relationship; Reversibility." },
+  { id:36, topic:"Pop: Interpreting Results", marks:1, question:"What is meant by confounding?", answer:"The presence of a third variable that is associated with both the exposure/intervention and the outcome, contributing to the apparent association between them." },
+  { id:37, topic:"Pop: Interpreting Results", marks:1, question:"Socioeconomic deprivation is found to be associated with low birth weight. Name one possible confounder.", answer:"Any plausible example, e.g. maternal smoking, pollution exposure, poor nutrition, substance use." },
+  { id:38, topic:"Pop: Interpreting Results", marks:1, question:"In clinical research, what is bias?", answer:"A systematic error in the design or conduct of a study that gives a result different from the truth." },
+  { id:39, topic:"Pop: Interpreting Results", marks:2, question:"What is meant by (a) selection bias; and (b) information bias?", answer:"(a) Selection bias → bias resulting in an unequal chance of inclusion in a study (e.g. due to eligibility criteria or sampling method).\n(b) Information bias → inaccurate or incomplete recording of measurements (e.g. poor recall, poor interviewing techniques)." },
+  { id:40, topic:"Pop: Screening", marks:3, question:"List three Wilson and Jungner criteria for screening.", answer:"Any three, e.g.: Important health problem; Latent disease stage exists; Clear natural history of disease; Acceptable test available; Treatment available; Facilities for treatment available; Clear treatment guidelines; Cost-effective." },
+  { id:41, topic:"Pop: Screening", marks:2, question:"A thyroid cancer screening test has sensitivity 30%, specificity 97%, PPV 50%, NPV 99%. Define sensitivity in terms of this test.", answer:"Sensitivity → proportion of people who have the disease that the test correctly detects.\nIn this case: of every 100 people with thyroid cancer, the test will correctly classify 30 of them as positive." },
+  { id:42, topic:"Pop: Screening", marks:2, question:"A thyroid cancer screening test has sensitivity 30%, specificity 97%, PPV 50%, NPV 99%. Define specificity in terms of this test.", answer:"Specificity → proportion of people who do not have the disease that the test correctly identifies as negative.\nIn this case: of every 100 people without thyroid cancer, the test will correctly classify 97 of them." },
+  { id:43, topic:"Pop: Screening", marks:2, question:"A thyroid cancer screening test has sensitivity 30%, specificity 97%, PPV 50%, NPV 99%. Define positive predictive value (PPV) in terms of this test.", answer:"PPV → proportion of positive test results that actually have the disease.\nIn this case: of every 100 people with a positive test result, 50 will have thyroid cancer." },
+  { id:44, topic:"Pop: Screening", marks:2, question:"A thyroid cancer screening test has sensitivity 30%, specificity 97%, PPV 50%, NPV 99%. Define negative predictive value (NPV) in terms of this test.", answer:"NPV → proportion of negative test results that actually do not have the disease.\nIn this case: of every 100 people with a negative test result, 99 will not have thyroid cancer." },
+  { id:45, topic:"Pop: Screening", marks:3, question:"Name and briefly describe three screening biases.", answer:"1. Healthy volunteer bias: people who accept screening are more likely to be healthier, making screening appear more effective.\n2. Length time bias: screening preferentially detects less aggressive disease with a better prognosis.\n3. Lead time bias: survival time appears longer because diagnosis occurs earlier, not because treatment is more effective." },
+  { id:46, topic:"Soc: Person-centred care", marks:4, question:"What are the four components of person-centred care?", answer:"1. Personalised care.\n2. Enabling care.\n3. Coordinated care.\n4. Treating a person with dignity, compassion and respect." },
+  { id:47, topic:"Soc: Person-centred care", marks:3, question:"Briefly describe what is meant by personalised, enabling, and coordinated care.", answer:"Personalised care: tailoring therapeutic plans and services to patients' needs and wishes.\nEnabling care: supporting self-management and shared decision-making.\nCoordinated care: integrating care between different services and providers." },
+  { id:48, topic:"Soc: Doctor-patient relationships", marks:3, question:"Name and briefly describe the three types of doctor-patient relationship.", answer:"Paternalistic: the doctor makes decisions in the patient's best interests.\nShared: shared decision-making between doctor and patient.\nInformed: the doctor communicates relevant information and the patient makes the decision." },
+  { id:49, topic:"Soc: Health inequalities", marks:4, question:"What is meant by equality, equity, inequality, and inequity?", answer:"Equality: equal (the same) treatment for everyone.\nEquity: fair treatment (even if unequal) so that everyone has the same outcome/overall benefit.\nInequality: differences in health between groups, whether unfair/avoidable or not.\nInequity: unfair/avoidable differences in health between groups." },
+  { id:50, topic:"Soc: Health inequalities", marks:5, question:"Name and briefly describe the five reasons for the social gradient in health.", answer:"Behavioural: variations in lifestyle behaviours (e.g. diet, smoking).\nMaterialist: variations in direct access to resources (e.g. housing, income).\nNeo-materialist: variations in community-level access to resources (e.g. education, healthcare).\nPsychosocial: variations in stress (e.g. poor social networks, low job control).\nLife-course: accumulation of adverse factors through life." },
+  { id:51, topic:"Soc: Behaviour change", marks:3, question:"Name and briefly describe the components of the COM-B model.", answer:"Capability: the individual's ability to perform a behaviour.\nOpportunity: external factors that hinder or facilitate a behaviour.\nMotivation: internal processes that drive behaviour." },
+  { id:52, topic:"Soc: Behaviour change", marks:6, question:"Name and briefly describe the six stages of the transtheoretical model.", answer:"1. Precontemplation: not considering change, in denial.\n2. Contemplation: aware of a problem and considering change.\n3. Preparation: has made a plan of action to implement.\n4. Action: making active changes.\n5. Maintenance: sustaining behaviour changes.\n6. Relapse: going backwards one or more stages." },
+  { id:53, topic:"Soc: Prevention", marks:4, question:"In relation to CVD, what is meant by primordial, primary, secondary, and tertiary prevention?", answer:"Primordial: preventing the risk factors for CVD (e.g. diabetes, hypertension).\nPrimary: preventing CVD before it occurs by addressing risk factors.\nSecondary: preventing CVD by addressing risk factors after pre-clinical disease has been detected.\nTertiary: preventing complications or recurrence in those with symptomatic CVD." },
+  { id:54, topic:"Soc: Gender and ethnicity", marks:2, question:"Briefly describe the terms gender and gender identity.", answer:"Gender: socially constructed behaviours and attributes that society ascribes to women, men, girls and boys.\nGender identity: an individual's sense of their own gender." },
+  { id:55, topic:"Soc: Gender and ethnicity", marks:3, question:"Briefly describe the terms culture, ethnicity and race.", answer:"Culture: values, attitudes and preferences shared by a group.\nEthnicity: shared sense of identity based on geographic origin, ancestry, history, language or religion.\nRace: a socio-political construct based on observable physical features (e.g. skin colour)." },
+  { id:56, topic:"Soc: Gender and ethnicity", marks:5, question:"Briefly describe: acculturation, assimilation, integration, separation and marginalisation.", answer:"Acculturation: the process of taking on the culture of the host country.\nAssimilation: becoming fully integrated into the host country (including language).\nIntegration: taking on cultural norms of the host country whilst maintaining original culture.\nSeparation: maintaining original culture while rejecting the host country's culture.\nMarginalisation: rejection of both the original culture and the host country's culture." },
+  { id:57, topic:"Soc: Caring", marks:2, question:"Give two negative consequences of being an unpaid carer.", answer:"Any two, e.g.: Toll on mental and physical wellbeing; Financial hardship and employment setbacks; Social isolation and loneliness." },
+  { id:58, topic:"Soc: Caring", marks:4, question:"Give two advantages and two disadvantages of calling an unpaid carer a 'carer'.", answer:"Advantages: Recognition of their contribution; Provides a sense of identity.\nDisadvantages: Locks people into a role they may not want; Can undermine the person being cared for." },
+  { id:59, topic:"Soc: Chronic disease", marks:4, question:"Name and briefly describe the four coping strategies for chronic disease.", answer:"Denial: avoidance/minimisation of seriousness of illness or rejection of the diagnosis.\nNormalisation: minimising the impact of disease on daily life or concealing illness to maintain identity.\nResignation: embracing negative outcomes without seeking solutions.\nAccommodation: acknowledging the reality of disease and consciously adjusting lifestyle in a problem-focused way." },
+  { id:60, topic:"Soc: Chronic disease", marks:5, question:"Name and briefly describe the five dimensions of the self-regulatory model.", answer:"Identity: the label given to the illness.\nCause: the individual's belief about what triggered the illness.\nTimeline: the perceived duration or progression of the illness.\nConsequence: perceived physical, social and emotional impact of the disease.\nControl/cure: belief about how much the individual or medical treatment can manage/cure the illness." },
+  { id:61, topic:"Soc: Disability", marks:3, question:"Name three components of the legal definition of disability.", answer:"Any three: Causes a physical or mental impairment; Results in a substantial adverse effect; Long-term effect (12 months or more); Affects normal day-to-day activities." },
+  { id:62, topic:"Soc: Disability", marks:4, question:"What is the difference between the medical and social model of disability? What is the aim of intervention in each?", answer:"Medical model: disability is intrinsic to the individual; interventions aim to 'fix' the individual.\nSocial model: disability is extrinsic to the individual, resulting from social, attitudinal and physical barriers; interventions address socio-political and accessibility issues." },
+  { id:63, topic:"Soc: Occupational health", marks:2, question:"In occupational health, what is the difference between a hazard and a risk?", answer:"Hazard: something that may cause harm.\nRisk: the likelihood of harm occurring." },
+  { id:64, topic:"Soc: Occupational health", marks:3, question:"Give three examples of occupational hazards.", answer:"Any three, e.g.: Physical (slips/trips); Chemical (lead exposure); Ergonomic (poor posture); Biological (infection exposure from a patient); Psychosocial (work stress)." },
+  { id:65, topic:"Soc: Occupational health", marks:6, question:"What is the hierarchy of controls? List and briefly describe the components in order of most to least effective.", answer:"Framework of strategies to minimise/eliminate exposure to hazards.\n1. Elimination: removal of the hazard (most effective).\n2. Substitution: replace the hazard with a less hazardous alternative.\n3. Engineering controls: modify the environment to isolate workers from the hazard.\n4. Administrative controls: change working patterns to limit exposure.\n5. Personal protective equipment (PPE): provide wearable equipment to protect workers (least effective)." }
+];
+
 let state = {
   blockId: null,
   questions: [],   // {lecture, qIdx, q:[text, opts, correct, expl]} objects
@@ -2229,6 +2302,7 @@ function sortPoolByRecency(pool) {
 }
 
 function saveResume() {
+  if (!state.questions || !state.questions.length) return; // no active MCQ quiz
   // Serialise the current in-progress attempt
   // questions array contains objects with {lecture, qIdx, blockName, q:[...]}
   // q[1] (options) may have been shuffled — save as-is so resume is identical
@@ -2321,6 +2395,12 @@ function buildHome() {
     card.onclick = () => openSetup(id);
     g.appendChild(card);
   });
+  // High Yield SocPop SAQ tile
+  const saqCard = document.createElement('button');
+  saqCard.className = 'bcard saq-tile';
+  saqCard.innerHTML = `<div class="bcard-name">High Yield SocPop</div><div class="bcard-sub">Short-answer questions · exam format</div><div class="bcard-meta">65 SAQs · Pop &amp; Soc</div>`;
+  saqCard.onclick = () => openSaqPicker();
+  g.appendChild(saqCard);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2391,6 +2471,10 @@ function startAllRandom() {
       });
     });
   });
+  // Add SAQ questions to the pool
+  SAQ_QUESTIONS.forEach((q, idx) => {
+    pendingAllRandomPool.push({ type: 'saq', saqIdx: idx, blockName: 'High Yield SocPop', lecture: q.topic });
+  });
   fisherYates(pendingAllRandomPool);
 
   // Reset selection state
@@ -2438,7 +2522,9 @@ function confirmAllRandom() {
   if (!arSelectedCount) return;
   closeArModal();
 
-  const pool = sortPoolByRecency(pendingAllRandomPool).slice(0, arSelectedCount).map(item => ({ ...item, q: shuffleAnswers(resolveQuestion(item.q)) }));
+  const pool = sortPoolByRecency(pendingAllRandomPool).slice(0, arSelectedCount).map(item =>
+    item.type === 'saq' ? item : { ...item, q: shuffleAnswers(resolveQuestion(item.q)) }
+  );
 
   state.questions    = pool;
   state.answers      = {};
@@ -2563,6 +2649,7 @@ function syncTimerCheckboxes() {
 function renderQ() {
   const total = state.questions.length;
   const i = state.currentQ;
+  if (state.questions[i].type === 'saq') { renderSaqInlineQ(); return; }
   const {lecture, qIdx, q} = state.questions[i];
   const [text, opts, correct, expl] = q;
   const correctIdx = ['A','B','C','D','E'].indexOf(correct);
@@ -2696,7 +2783,7 @@ function correctlyAnsweredItems() {
 }
 
 function savePartial() {
-  // Save whatever was answered so far
+  if (!state.questions.length) return; // no active MCQ quiz (e.g. in SAQ mode)
   addRecentQ(correctlyAnsweredItems());
   saveAttemptRecord();
 }
@@ -2717,8 +2804,13 @@ function saveAttemptRecord() {
   qs.forEach((item, i) => {
     const chosen = state.answers[i];
     if (chosen === undefined) return;
-    const correctIdx = ['A','B','C','D','E'].indexOf(item.q[2]);
-    const ok = chosen === correctIdx;
+    let ok;
+    if (item.type === 'saq') {
+      ok = chosen === 'got';
+    } else {
+      const correctIdx = ['A','B','C','D','E'].indexOf(item.q[2]);
+      ok = chosen === correctIdx;
+    }
     if (ok) correct++;
     if (!lecBreakdown[item.lecture]) lecBreakdown[item.lecture] = {answered:0, correct:0, total: qs.filter(q=>q.lecture===item.lecture).length};
     lecBreakdown[item.lecture].answered++;
@@ -2755,11 +2847,17 @@ function showResults() {
     const chosen = state.answers[i];
     if (chosen === undefined) return;
     answered++;
-    const correctIdx = ['A','B','C','D','E'].indexOf(item.q[2]);
-    if (chosen === correctIdx) correct++;
+    let ok;
+    if (item.type === 'saq') {
+      ok = chosen === 'got';
+    } else {
+      const correctIdx = ['A','B','C','D','E'].indexOf(item.q[2]);
+      ok = chosen === correctIdx;
+    }
+    if (ok) correct++;
     if (!lecBreakdown[item.lecture]) lecBreakdown[item.lecture] = {answered:0, correct:0, total: qs.filter(q=>q.lecture===item.lecture).length};
     lecBreakdown[item.lecture].answered++;
-    if (chosen === correctIdx) lecBreakdown[item.lecture].correct++;
+    if (ok) lecBreakdown[item.lecture].correct++;
   });
   const pct = answered ? Math.round(correct/answered*100) : 0;
   const bannerCls = pct >= 70 ? 'result-good' : pct >= 50 ? 'result-mid' : 'result-bad';
@@ -2847,6 +2945,22 @@ function reviewAnswers() {
   let html = '';
   qs.forEach((item, i) => {
     const chosen = state.answers[i];
+    if (item.type === 'saq') {
+      const q = SAQ_QUESTIONS[item.saqIdx];
+      const ratingLabel = chosen === 'got' ? '✓ Got it' : chosen === 'partial' ? '~ Partial' : chosen === 'missed' ? '✗ Missed' : '⬜ Unanswered';
+      const ratingCls   = chosen === 'got' ? 'rev-correct' : chosen === 'partial' ? 'rev-partial' : chosen === 'missed' ? 'rev-wrong' : '';
+      html += `<div class="rev-q">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+          <span class="lec-tag">${q.topic}</span>
+          <span class="${ratingCls}" style="font-size:12px">${ratingLabel}</span>
+        </div>
+        <div class="rev-q-text">${i+1}. ${q.question}</div>
+        <details class="saq-rev-details"><summary>Model answer</summary>
+          <div class="saq-model-answer" style="margin-top:6px">${q.answer}</div>
+        </details>
+      </div>`;
+      return;
+    }
     const [text, opts, correct, expl] = item.q;
     const correctIdx = ['A','B','C','D','E'].indexOf(correct);
     const isOk = chosen !== undefined && chosen === correctIdx;
@@ -3322,6 +3436,313 @@ function renderAllRandomStats(period) {
       });
     }
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HIGH YIELD SOCPOP — SAQ MODE LOGIC
+// ═══════════════════════════════════════════════════════════════
+
+// SAQ spaced-repetition
+const SAQ_RECENT_KEY = 'p1quiz_saq_recent';
+const SAQ_RECENT_MAX = 65;
+function loadSaqRecent() { return load(SAQ_RECENT_KEY, []); }
+function saveSaqRecent(arr) { save(SAQ_RECENT_KEY, arr); }
+function addRecentSaq(id) {
+  let arr = loadSaqRecent();
+  arr = arr.filter(x => x !== id);
+  arr.push(id);
+  if (arr.length > SAQ_RECENT_MAX) arr = arr.slice(-SAQ_RECENT_MAX);
+  saveSaqRecent(arr);
+}
+function sortSaqPoolByRecency(pool) {
+  const recent = loadSaqRecent();
+  const fresh = pool.filter(i => !recent.includes(SAQ_QUESTIONS[i].id));
+  const seen  = pool.filter(i =>  recent.includes(SAQ_QUESTIONS[i].id));
+  fisherYates(fresh);
+  fisherYates(seen);
+  return [...fresh, ...seen];
+}
+
+// SAQ quiz state (separate from MCQ state)
+let saqState = {
+  pool: [],
+  index: 0,
+  results: [],
+  filter: 'all',
+  isRetest: false
+};
+
+function openSaqPicker() {
+  document.getElementById('saqPickerModal').style.display = 'flex';
+}
+function closeSaqPicker() {
+  document.getElementById('saqPickerModal').style.display = 'none';
+}
+
+function startSaq(filter) {
+  closeSaqPicker();
+  // Clear MCQ state so savePartial/saveResume are no-ops while in SAQ mode
+  state.questions = [];
+  state.answers = {};
+  const indices = SAQ_QUESTIONS.map((q, i) => i).filter(i => {
+    if (filter === 'pop') return SAQ_QUESTIONS[i].topic.startsWith('Pop:');
+    if (filter === 'soc') return SAQ_QUESTIONS[i].topic.startsWith('Soc:');
+    return true;
+  });
+  saqState.pool = sortSaqPoolByRecency(indices);
+  saqState.index = 0;
+  saqState.results = [];
+  saqState.filter = filter;
+  saqState.isRetest = false;
+  document.getElementById('qTitle').textContent = 'High Yield SocPop — SAQ';
+  showScreen('quiz');
+  renderSaqStandaloneQ();
+}
+
+function retestWeak() {
+  const weakIds = saqState.results
+    .filter(r => r.rating === 'partial' || r.rating === 'missed')
+    .map(r => r.id);
+  const indices = SAQ_QUESTIONS.map((q, i) => i).filter(i => weakIds.includes(SAQ_QUESTIONS[i].id));
+  fisherYates(indices);
+  state.questions = [];
+  state.answers = {};
+  saqState.pool = indices;
+  saqState.index = 0;
+  saqState.results = [];
+  saqState.isRetest = true;
+  document.getElementById('qTitle').textContent = 'High Yield SocPop — Retest';
+  showScreen('quiz');
+  renderSaqStandaloneQ();
+}
+
+function renderSaqStandaloneQ() {
+  const total = saqState.pool.length;
+  const i = saqState.index;
+  const q = SAQ_QUESTIONS[saqState.pool[i]];
+  const pct = (i / total) * 100;
+
+  document.getElementById('qMeta').textContent = q.topic + ' · SAQ';
+  document.getElementById('pFill').style.width = pct + '%';
+  document.getElementById('pLeft').textContent = i + ' answered';
+  document.getElementById('pRight').textContent = (i + 1) + ' / ' + total;
+  document.getElementById('qCtr').textContent = 'Q' + (i + 1) + ' of ' + total;
+  document.getElementById('prevBtn').disabled = true;
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('finBtn').style.display = 'none';
+
+  const marksText = q.marks === 1 ? '1 mark' : q.marks + ' marks';
+
+  document.getElementById('qArea').innerHTML = `
+    <div class="qcard saq-card">
+      <div class="saq-header">
+        <div class="lec-tag">${q.topic}</div>
+        <div class="saq-marks-badge">${marksText}</div>
+      </div>
+      <div class="qtext">${q.question}</div>
+      <div class="saq-input-area">
+        <label class="saq-input-label">Your answer:</label>
+        <textarea class="saq-input" id="saqTextarea" placeholder="Write your answer here..." rows="4"></textarea>
+      </div>
+      <button class="saq-reveal-btn" id="saqRevealBtn" onclick="revealSaqStandaloneAnswer()">Reveal Answer</button>
+      <div class="saq-reveal-section" id="saqRevealSection" style="display:none">
+        <div class="saq-compare-row">
+          <div>
+            <div class="saq-compare-label">Your answer:</div>
+            <div class="saq-your-text" id="saqYourText"></div>
+          </div>
+          <div>
+            <div class="saq-compare-label">Model answer:</div>
+            <div class="saq-model-answer" id="saqModelAnswer"></div>
+          </div>
+        </div>
+        <div class="saq-rating-row">
+          <div class="saq-rating-label">How did you do?</div>
+          <div class="saq-rating-btns">
+            <button class="saq-rating-btn missed" onclick="rateSaqStandalone('missed')">✗ Missed</button>
+            <button class="saq-rating-btn partial" onclick="rateSaqStandalone('partial')">~ Partial</button>
+            <button class="saq-rating-btn got" onclick="rateSaqStandalone('got')">✓ Got it</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function revealSaqStandaloneAnswer() {
+  const q = SAQ_QUESTIONS[saqState.pool[saqState.index]];
+  const textarea = document.getElementById('saqTextarea');
+  document.getElementById('saqYourText').textContent = textarea.value.trim() || '(no answer written)';
+  document.getElementById('saqModelAnswer').textContent = q.answer;
+  document.getElementById('saqRevealSection').style.display = '';
+  document.getElementById('saqRevealBtn').style.display = 'none';
+  document.getElementById('saqRevealSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function rateSaqStandalone(rating) {
+  const q = SAQ_QUESTIONS[saqState.pool[saqState.index]];
+  saqState.results.push({ id: q.id, rating, marks: q.marks, topic: q.topic });
+  if (typeof shaderAnswerFlash === 'function') shaderAnswerFlash(rating === 'got');
+  if (rating === 'got') addRecentSaq(q.id);
+  saqState.index++;
+  if (saqState.index >= saqState.pool.length) {
+    showSaqResults();
+  } else {
+    renderSaqStandaloneQ();
+  }
+}
+
+function showSaqResults() {
+  showScreen('saqResults');
+  const results = saqState.results;
+  const total = results.length;
+  const got     = results.filter(r => r.rating === 'got').length;
+  const partial = results.filter(r => r.rating === 'partial').length;
+  const missed  = results.filter(r => r.rating === 'missed').length;
+  const totalMarks  = results.reduce((s, r) => s + r.marks, 0);
+  const earnedMarks = results.reduce((s, r) => {
+    if (r.rating === 'got')     return s + r.marks;
+    if (r.rating === 'partial') return s + r.marks * 0.5;
+    return s;
+  }, 0);
+  const marksRounded = Math.round(earnedMarks * 2) / 2;
+  const pct = totalMarks ? Math.round(earnedMarks / totalMarks * 100) : 0;
+  const bannerCls = pct >= 70 ? 'result-good' : pct >= 50 ? 'result-mid' : 'result-bad';
+  const weakCount = partial + missed;
+  const retestBtn = weakCount > 0
+    ? `<button class="btn btn-amber" onclick="retestWeak()">↩ Retest ${weakCount} weak question${weakCount > 1 ? 's' : ''}</button>`
+    : '';
+
+  document.getElementById('saqResContent').innerHTML = `
+    <div class="result-banner ${bannerCls}">
+      <div class="result-score">${pct}%</div>
+      <div class="result-label">${marksRounded} / ${totalMarks} marks &nbsp;·&nbsp; ${got} got it &nbsp;·&nbsp; ${partial} partial &nbsp;·&nbsp; ${missed} missed</div>
+    </div>
+    <div class="stat-grid">
+      <div class="scard"><div class="n">${total}</div><div class="l">Questions</div></div>
+      <div class="scard"><div class="n" style="color:var(--ok)">${got}</div><div class="l">Got it</div></div>
+      <div class="scard"><div class="n" style="color:var(--amber-text)">${partial}</div><div class="l">Partial</div></div>
+      <div class="scard"><div class="n" style="color:var(--bad)">${missed}</div><div class="l">Missed</div></div>
+    </div>
+    <div class="saq-results-actions">
+      ${retestBtn}
+      <button class="btn" onclick="showSaqReview()">Review answers</button>
+      <button class="btn" onclick="startSaq(saqState.filter)">Try again</button>
+      <button class="btn" onclick="showHome()">Home</button>
+    </div>`;
+}
+
+function showSaqReview() {
+  showScreen('saqReview');
+  let html = '';
+  saqState.results.forEach((r, i) => {
+    const q = SAQ_QUESTIONS.find(sq => sq.id === r.id);
+    if (!q) return;
+    const ratingLabel = r.rating === 'got' ? '✓ Got it' : r.rating === 'partial' ? '~ Partial' : '✗ Missed';
+    const ratingCls   = r.rating === 'got' ? 'rev-correct' : r.rating === 'partial' ? 'rev-partial' : 'rev-wrong';
+    const marksText   = q.marks === 1 ? '1 mark' : q.marks + ' marks';
+    html += `
+      <div class="rev-item">
+        <div class="rev-item-header">
+          <span class="rev-item-num">Q${i + 1}</span>
+          <span class="rev-topic">${q.topic}</span>
+          <span class="rev-marks">${marksText}</span>
+          <span class="${ratingCls}">${ratingLabel}</span>
+        </div>
+        <div class="rev-question">${q.question}</div>
+        <details class="saq-rev-details">
+          <summary>Model answer</summary>
+          <div class="saq-model-answer">${q.answer}</div>
+        </details>
+      </div>`;
+  });
+  document.getElementById('saqRevContent').innerHTML = html || '<p style="color:var(--ink-dim)">No answers to review.</p>';
+}
+
+// SAQ inline rendering for All Random mode
+function renderSaqInlineQ() {
+  const total = state.questions.length;
+  const i = state.currentQ;
+  const item = state.questions[i];
+  const q = SAQ_QUESTIONS[item.saqIdx];
+  const saved = state.answers[i]; // 'got'|'partial'|'missed'|undefined
+  const answered = Object.keys(state.answers).length;
+
+  document.getElementById('qMeta').textContent = q.topic + ' · Random mode';
+  const pct = (i / total) * 100;
+  document.getElementById('pFill').style.width = pct + '%';
+  document.getElementById('pLeft').textContent = answered + ' answered';
+  document.getElementById('pRight').textContent = (i + 1) + ' / ' + total;
+  document.getElementById('qCtr').textContent = 'Q' + (i + 1) + ' of ' + total;
+  document.getElementById('prevBtn').disabled = i === 0;
+  document.getElementById('nextBtn').style.display = i < total - 1 ? '' : 'none';
+  document.getElementById('finBtn').style.display = i === total - 1 ? '' : 'none';
+
+  const marksText = q.marks === 1 ? '1 mark' : q.marks + ' marks';
+
+  let bodyHtml;
+  if (saved) {
+    const ratingLabel = saved === 'got' ? '✓ Got it' : saved === 'partial' ? '~ Partial' : '✗ Missed';
+    const ratingCls   = saved === 'got' ? 'saq-rated-got' : saved === 'partial' ? 'saq-rated-partial' : 'saq-rated-missed';
+    bodyHtml = `
+      <div class="saq-compare-label" style="margin-top:14px">Model answer:</div>
+      <div class="saq-model-answer">${q.answer}</div>
+      <div class="saq-rated ${ratingCls}" style="margin-top:12px">${ratingLabel}</div>`;
+  } else {
+    bodyHtml = `
+      <div class="saq-input-area">
+        <label class="saq-input-label">Your answer:</label>
+        <textarea class="saq-input" id="saqTextareaInline" placeholder="Write your answer here..." rows="4"></textarea>
+      </div>
+      <button class="saq-reveal-btn" id="saqRevealBtnInline" onclick="revealSaqInlineAnswer()">Reveal Answer</button>
+      <div class="saq-reveal-section" id="saqRevealSectionInline" style="display:none">
+        <div class="saq-compare-row">
+          <div>
+            <div class="saq-compare-label">Your answer:</div>
+            <div class="saq-your-text" id="saqYourTextInline"></div>
+          </div>
+          <div>
+            <div class="saq-compare-label">Model answer:</div>
+            <div class="saq-model-answer" id="saqModelAnswerInline"></div>
+          </div>
+        </div>
+        <div class="saq-rating-row">
+          <div class="saq-rating-label">How did you do?</div>
+          <div class="saq-rating-btns">
+            <button class="saq-rating-btn missed" onclick="rateSaqInline('missed')">✗ Missed</button>
+            <button class="saq-rating-btn partial" onclick="rateSaqInline('partial')">~ Partial</button>
+            <button class="saq-rating-btn got" onclick="rateSaqInline('got')">✓ Got it</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('qArea').innerHTML = `
+    <div class="qcard saq-card">
+      <div class="saq-header">
+        <div class="lec-tag">${q.topic}</div>
+        <div class="saq-marks-badge">${marksText}</div>
+      </div>
+      <div class="qtext">${q.question}</div>
+      ${bodyHtml}
+    </div>`;
+}
+
+function revealSaqInlineAnswer() {
+  const item = state.questions[state.currentQ];
+  const q = SAQ_QUESTIONS[item.saqIdx];
+  const textarea = document.getElementById('saqTextareaInline');
+  document.getElementById('saqYourTextInline').textContent = textarea.value.trim() || '(no answer written)';
+  document.getElementById('saqModelAnswerInline').textContent = q.answer;
+  document.getElementById('saqRevealSectionInline').style.display = '';
+  document.getElementById('saqRevealBtnInline').style.display = 'none';
+  document.getElementById('saqRevealSectionInline').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function rateSaqInline(rating) {
+  state.answers[state.currentQ] = rating;
+  saveResume();
+  if (typeof shaderAnswerFlash === 'function') shaderAnswerFlash(rating === 'got');
+  renderQ();
 }
 
 // ═══════════════════════════════════════════════════════════════

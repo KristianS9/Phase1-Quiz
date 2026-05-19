@@ -148,6 +148,20 @@
   </div>
 </div>
 
+<!-- ── SAQ TOPIC PICKER ── -->
+<div id="saqPickerModal" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <h2>High Yield SocPop — SAQ</h2>
+    <p style="font-size:13px;color:var(--ink-dim);margin:0 0 1.2rem">65 short-answer questions in exam format. Type your answer, reveal the model answer, then rate yourself.</p>
+    <button class="saq-pick-btn" onclick="startSaq('all')">All Topics <span>65 Qs</span></button>
+    <button class="saq-pick-btn" onclick="startSaq('pop')">Population Science <span>45 Qs</span></button>
+    <button class="saq-pick-btn" onclick="startSaq('soc')">Sociology <span>20 Qs</span></button>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeSaqPicker()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── SETUP MODAL ── -->
 <div id="setupModal" class="modal-overlay" style="display:none">
   <div class="modal">
@@ -260,6 +274,24 @@
   </div>
   <div id="eqStudy"></div>
   <div id="eqPractice" style="display:none"></div>
+</div>
+
+<!-- ── SAQ RESULTS ── -->
+<div id="saqResults" class="screen">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+    <h2>SAQ Results</h2>
+    <button class="btn" onclick="showHome()">Home</button>
+  </div>
+  <div id="saqResContent"></div>
+</div>
+
+<!-- ── SAQ REVIEW ── -->
+<div id="saqReview" class="screen">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+    <h2>SAQ Review</h2>
+    <button class="btn" onclick="showScreen('saqResults')">← Back</button>
+  </div>
+  <div id="saqRevContent"></div>
 </div>
 
 </div><!-- .app -->
