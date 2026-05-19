@@ -55,9 +55,13 @@ document.getElementById('gateEmail').addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════════════
 // VERSION & CHANGELOG
 // ═══════════════════════════════════════════════════════════════
-const QUIZ_VERSION = "v25.4";
+const QUIZ_VERSION = "v25.6";
 
 const CHANGELOG = [
+  { version:"v25.6", date:"19 May 2026", summary:"High Yield SocPop — Pop questions updated to confirmed list; RCT section removed; forest plot image added to Systematic Reviews questions",
+    changes:["Remove 8 RCT questions not in confirmed Pop question list","Add forest plot image to all 5 Systematic Reviews questions","Split pooled effect size / statistical significance into separate questions","Update picker counts: 58 total, 38 Pop, 20 Soc"] },
+  { version:"v25.5", date:"19 May 2026", summary:"SAQ stats tab in Summary Stats — persist sessions and show topic/question breakdown",
+    changes:["Save each completed SAQ session to localStorage (p1quiz_saq_attempts)","New SAQ tab in stats screen with 8 stat cards, topic breakdown, most-missed questions list, session history"] },
   { version:"v25.4", date:"19 May 2026", summary:"High Yield SocPop — 65 SAQ questions with free-text reveal and self-marking",
     changes:["New 'High Yield SocPop' tile on the home screen — 65 short-answer questions covering Population Science and Sociology topics across all blocks","True exam-format SAQ mode: type your answer in a text box, reveal the model answer, then self-rate as Got it / Partial / Missed","Pre-quiz topic filter: choose Population Science (45 Qs), Sociology (20 Qs), or All 65 questions","Retest Weak Questions button on results screen — immediately reruns any Partial or Missed questions for targeted drill-down","Review screen shows all attempted questions with model answers (expand/collapse) and self-rating","SAQ questions included in All Random mode — free-text UI renders inline alongside MCQs","Spaced-repetition for SAQ: 'Got it' questions enter cooldown and appear less frequently; Partial/Missed stay fresh","Question wording and model answers preserved verbatim from the High Yield SocPop question bank"] },
   { version:"v25.3", date:"17 May 2026", summary:"Question timer — per-question stopwatch with colour feedback and avg-time stat",
@@ -2002,18 +2006,11 @@ const SAQ_QUESTIONS = [
   { id:19, topic:"Pop: Study Design", marks:1, question:"In a study to test efficacy of a new analgesic, participants are allocated to either the new analgesic or a standard one with equal probability. Which study design is this?", answer:"Randomised controlled trial (RCT)." },
   { id:20, topic:"Pop: Study Design", marks:1, question:"A study explores the association between folate and orofacial cleft (OFC). Mothers of babies with OFC and without OFC are recruited and asked about their previous folate supplement use. Which study design is this?", answer:"Case-control study." },
   { id:21, topic:"Pop: Study Design", marks:1, question:"Office workers and factory workers are recruited and followed up for 10 years for the development of stroke. Which study design is this?", answer:"(Prospective) Cohort study." },
-  { id:22, topic:"Pop: RCT", marks:2, question:"What is meant by the term 'randomised' and 'controlled' in a randomised controlled trial?", answer:"Randomised → participants have an equal chance of being allocated to either/any group.\nControlled → there is a second group treated as similarly as possible except they do not receive the intervention under investigation." },
-  { id:23, topic:"Pop: RCT", marks:1, question:"Give an advantage of randomisation.", answer:"Ensures both groups have similar characteristics (reduces confounding)." },
-  { id:24, topic:"Pop: RCT", marks:1, question:"What is meant by a placebo?", answer:"An inert substance identical in appearance/taste etc. to the substance under investigation (or a sham intervention)." },
-  { id:25, topic:"Pop: RCT", marks:2, question:"What is meant by 'blinding'?", answer:"Blinding is where patients and/or clinicians and/or outcome assessors are unaware of treatment allocation.\nSingle blind → one of the above groups does not know.\nDouble blind → two or more groups do not know.\nAim → to remove differential placebo effect between groups that could introduce bias." },
-  { id:26, topic:"Pop: RCT", marks:2, question:"What is the difference between a 'per-protocol' (as-treated) analysis and an 'intention-to-treat' analysis?", answer:"Per-protocol → only analyse participants who completed the trial as intended, in their original groups.\nITT → include all recruited participants in their original groups, regardless of whether they completed the trial or swapped groups." },
-  { id:27, topic:"Pop: RCT", marks:1, question:"What is meant by 'clinical equipoise'?", answer:"Genuine uncertainty about whether treatment or non-treatment is better." },
-  { id:28, topic:"Pop: RCT", marks:1, question:"What do we call a trial where participants can choose whether they have the intervention or control?", answer:"Non-randomised controlled trial." },
-  { id:29, topic:"Pop: RCT", marks:1, question:"Which study design sits at the top of the hierarchy of evidence?", answer:"Systematic review (± meta-analysis)." },
-  { id:30, topic:"Pop: Systematic Reviews", marks:2, question:"On a forest plot, what do the error bars show, and what does the size of each square represent?", answer:"Error bars → 95% confidence intervals (level of uncertainty).\nSquare size → sample size (weighting of the study)." },
-  { id:31, topic:"Pop: Systematic Reviews", marks:1, question:"What does the I² result represent in a forest plot?", answer:"Heterogeneity (the degree of variability between study results)." },
-  { id:32, topic:"Pop: Systematic Reviews", marks:3, question:"From a forest plot with pooled RR 0.87, 95% CI 0.41–1.87: (a) What is the pooled effect size and CI? (b) Is the result statistically significant? Justify your answer.", answer:"(a) Effect size: RR 0.87; 95% CI: 0.41 to 1.87.\n(b) Not statistically significant — the 95% CI includes the null value of 1 (also p > 0.05)." },
-  { id:33, topic:"Pop: Systematic Reviews", marks:2, question:"On a forest plot, which study has the most uncertainty, and why?", answer:"The study with the widest confidence interval (error bars). This is typically because it has the smallest sample size." },
+  { id:30, topic:"Pop: Systematic Reviews", marks:2, question:"<img src=\"images/forest_plot.jpg\" class=\"saq-forest-plot\" alt=\"Forest plot\"><br>In this plot, what do the error bars show, and what does the size of each square represent?", answer:"Error bars → 95% confidence intervals (level of uncertainty).\nSquare size → sample size (weighting of the study)." },
+  { id:31, topic:"Pop: Systematic Reviews", marks:1, question:"<img src=\"images/forest_plot.jpg\" class=\"saq-forest-plot\" alt=\"Forest plot\"><br>What does the I² result represent?", answer:"Heterogeneity (the degree of variability between study results)." },
+  { id:32, topic:"Pop: Systematic Reviews", marks:2, question:"<img src=\"images/forest_plot.jpg\" class=\"saq-forest-plot\" alt=\"Forest plot\"><br>What is the pooled effect size and 95% CI?", answer:"Effect size: RR 0.87; 95% CI: 0.41 to 1.87." },
+  { id:22, topic:"Pop: Systematic Reviews", marks:1, question:"<img src=\"images/forest_plot.jpg\" class=\"saq-forest-plot\" alt=\"Forest plot\"><br>Is the result statistically significant? Justify your answer.", answer:"Not statistically significant — the 95% CI includes the null value of 1 (also p > 0.05)." },
+  { id:33, topic:"Pop: Systematic Reviews", marks:2, question:"<img src=\"images/forest_plot.jpg\" class=\"saq-forest-plot\" alt=\"Forest plot\"><br>Which study has the most uncertainty? Why do you think that is?", answer:"The study with the widest confidence interval (error bars). This is typically because it has the smallest sample size." },
   { id:34, topic:"Pop: Interpreting Results", marks:3, question:"Name three reasons why a study might find a statistically significant result.", answer:"1. It reflects the truth.\n2. Chance.\n3. Bias.\n4. Confounding. (Any three.)" },
   { id:35, topic:"Pop: Interpreting Results", marks:3, question:"What is meant by biological plausibility? List two other Bradford-Hill criteria.", answer:"Biological plausibility → a biological mechanism that explains the association is likely or demonstrated.\nOther criteria (any two, e.g.): Strength of association; Consistency of association; Temporal sequence; Dose-response relationship; Reversibility." },
   { id:36, topic:"Pop: Interpreting Results", marks:1, question:"What is meant by confounding?", answer:"The presence of a third variable that is associated with both the exposure/intervention and the outcome, contributing to the apparent association between them." },
@@ -2400,7 +2397,7 @@ function buildHome() {
   // High Yield SocPop SAQ tile
   const saqCard = document.createElement('button');
   saqCard.className = 'bcard saq-tile';
-  saqCard.innerHTML = `<div class="bcard-name">High Yield SocPop</div><div class="bcard-sub">Short-answer questions · exam format</div><div class="bcard-meta">65 SAQs · Pop &amp; Soc</div>`;
+  saqCard.innerHTML = `<div class="bcard-name">High Yield SocPop</div><div class="bcard-sub">Short-answer questions · exam format</div><div class="bcard-meta">58 SAQs · Pop &amp; Soc</div>`;
   saqCard.onclick = () => openSaqPicker();
   g.appendChild(saqCard);
 }
@@ -3512,7 +3509,7 @@ function renderSaqStats() {
 
   const worstHtml = worst.length ? worst.map(w => {
     const q = SAQ_QUESTIONS.find(sq => sq.id === w.id);
-    const qText = q ? q.question : '(unknown)';
+    const qText = q ? q.question.replace(/<[^>]*>/g, '').trim() : '(unknown)';
     return `<div class="saq-miss-item">
       <div class="saq-miss-topic">${w.topic}</div>
       <div class="saq-miss-q">${qText}</div>

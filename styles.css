@@ -1273,4 +1273,5 @@ canvas { max-width: 100%; border-radius: var(--radius); }
 .saq-miss-topic { font-size: .75rem; font-family: "JetBrains Mono", ui-monospace, monospace; color: var(--amber-text); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .05em; }
 .saq-miss-q { font-size: .93rem; margin-bottom: 6px; line-height: 1.4; }
 .saq-miss-stats { font-size: .82rem; opacity: .85; }
+.saq-forest-plot { max-width: 100%; border-radius: 6px; margin: 6px 0 2px; display: block; }
 
