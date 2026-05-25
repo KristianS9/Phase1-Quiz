@@ -55,9 +55,11 @@ document.getElementById('gateEmail').addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════════════
 // VERSION & CHANGELOG
 // ═══════════════════════════════════════════════════════════════
-const QUIZ_VERSION = "v25.6";
+const QUIZ_VERSION = "v25.7";
 
 const CHANGELOG = [
+  { version:"v25.7", date:"25 May 2026", summary:"Font size control — A / A+ / A++ toggle in topbar, persisted across sessions, works across all three themes",
+    changes:["Add font size toggle (A / A+ / A++) in topbar alongside theme switcher","Three presets: Normal (default), Large (+18%), Extra Large (+38%)","Scales question text, answer option text, and explanation text","Font size preference saved to localStorage and restored on reload","Works correctly across Midnight, Lab, and Vellum themes"] },
   { version:"v25.6", date:"19 May 2026", summary:"High Yield SocPop — Pop questions updated to confirmed list; RCT section removed; forest plot image added to Systematic Reviews questions",
     changes:["Remove 8 RCT questions not in confirmed Pop question list","Add forest plot image to all 5 Systematic Reviews questions","Split pooled effect size / statistical significance into separate questions","Update picker counts: 58 total, 38 Pop, 20 Soc"] },
   { version:"v25.5", date:"19 May 2026", summary:"SAQ stats tab in Summary Stats — persist sessions and show topic/question breakdown",
@@ -2095,6 +2097,21 @@ function initTheme() {
   }
 }
 // ────────────────────────────────────────────────────────────────
+
+// ── Font size management ─────────────────────────────────────────
+const FONT_KEY = 'p1quiz_font';
+function applyFontSize(size) {
+  document.body.classList.toggle('font-lg', size === 'large');
+  document.body.classList.toggle('font-xl', size === 'xl');
+  document.querySelectorAll('.font-toggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.font === size);
+  });
+  try { localStorage.setItem(FONT_KEY, JSON.stringify(size)); } catch(_) {}
+}
+function initFontSize() {
+  applyFontSize(load(FONT_KEY, 'normal'));
+}
+// ─────────────────────────────────────────────────────────────────
 
 let allAttempts    = load('p1quiz_attempts', []);
 let allStats       = load('p1quiz_stats', {});    // {blockId: {lectureName: {answered, correct}}}
@@ -4153,4 +4170,6 @@ function startEqPractice() {
 let ff=0,fl=performance.now();(function fpsLoop(){ff++;const n=performance.now();if(n-fl>1000){const el=document.getElementById('railFps');if(el)el.textContent='FPS '+Math.round(ff*1000/(n-fl));ff=0;fl=n;}requestAnimationFrame(fpsLoop);})();
 // theme toggle + init (must run after SS, FRAG_BIFROST, and window.shaderInit are all defined)
 document.querySelector('.mode-toggle')?.addEventListener('click',e=>{const btn=e.target.closest('button[data-mode]');if(btn)applyTheme(btn.dataset.mode);});
+document.querySelector('.font-toggle')?.addEventListener('click',e=>{const btn=e.target.closest('button[data-font]');if(btn)applyFontSize(btn.dataset.font);});
 initTheme();
+initFontSize();

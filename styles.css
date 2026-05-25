@@ -52,6 +52,7 @@
   --radius: 4px;
   --radius-sm: 2px;
   --overlay-bg: rgba(0,0,0,0.65);
+  --fs: 1;  /* font-size scale — overridden by .font-lg / .font-xl */
   color-scheme: dark;
 }
 
@@ -109,6 +110,10 @@ body.lab-mode {
   --overlay-bg: rgba(0,0,0,0.65);
   color-scheme: dark;
 }
+
+/* ── Font size presets ─────────────────────────── */
+body.font-lg { --fs: 1.18; }
+body.font-xl { --fs: 1.38; }
 
 /* ── Hide WebGL shader in Vellum (uses CSS bg) ─ */
 body.vellum-mode #shaderStage,
@@ -570,7 +575,7 @@ html, body {
   display: inline-block; margin-bottom: 14px;
 }
 .qtext {
-  font-size: clamp(15px, 2.2vh, 19px);
+  font-size: clamp(calc(15px * var(--fs)), 2.2vh, calc(19px * var(--fs)));
   line-height: 1.38; font-weight: 500;
   letter-spacing: -0.01em;
   color: var(--ink);
@@ -588,7 +593,7 @@ html, body {
   background: rgba(255,255,255,0.015);
   cursor: pointer; width: 100%; text-align: left;
   font-family: var(--font-display);
-  color: var(--ink); font-size: 14.5px; line-height: 1.4;
+  color: var(--ink); font-size: calc(14.5px * var(--fs)); line-height: 1.4;
   border-radius: 2px;
   transition: transform 200ms cubic-bezier(.2,.8,.2,1),
               border-color 180ms, background 180ms;
@@ -653,7 +658,7 @@ html, body {
 .expl-body { padding: 12px 0 4px; }
 .expl-body.hidden { display: none; }
 .notion-extract {
-  font-size: 13px; line-height: 1.6; color: var(--ink-dim);
+  font-size: calc(13px * var(--fs)); line-height: 1.6; color: var(--ink-dim);
   border-left: 2px solid rgba(127,227,208,0.30);
   padding-left: 14px; margin-bottom: 10px;
 }
@@ -1098,6 +1103,32 @@ canvas { max-width: 100%; border-radius: var(--radius); }
 .mode-toggle button:last-child { border-right: none; }
 .mode-toggle button:hover { color: var(--ink); }
 .mode-toggle button.active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+/* ── Font size toggle ────────────────────────────── */
+.font-toggle {
+  display: flex; align-items: stretch;
+  border: 1px solid var(--hairline);
+  background: var(--bg-card);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: auto;
+}
+.font-toggle button {
+  background: transparent; border: none;
+  padding: 5px 10px;
+  font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: 0.20em; text-transform: uppercase;
+  color: var(--ink-dim); cursor: pointer;
+  border-right: 1px solid var(--hairline);
+  transition: color 180ms, background 180ms;
+  white-space: nowrap;
+}
+.font-toggle button:last-child { border-right: none; }
+.font-toggle button:hover { color: var(--ink); }
+.font-toggle button.active {
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
