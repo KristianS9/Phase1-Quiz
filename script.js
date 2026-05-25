@@ -2821,7 +2821,7 @@ function saveAttemptRecord() {
   const record = {
     id: state.attemptId,
     blockId: state.blockId,
-    blockName: state.blockId === 'all' ? 'All Blocks' : BLOCKS[state.blockId].name,
+    blockName: state.blockId === 'all' ? 'All Blocks' : (BLOCKS[state.blockId] ? BLOCKS[state.blockId].name : state.blockId),
     date: new Date().toISOString(),
     total, answered, correct,
     pct: answered ? Math.round(correct/answered*100) : 0,
@@ -2829,11 +2829,14 @@ function saveAttemptRecord() {
     breakdown: lecBreakdown,
     avgTimeSecs
   };
-  // Don't add duplicate
-  if (!allAttempts.find(a => a.id === state.attemptId)) {
+  // Update existing record if already saved (e.g. via savePartial on exit), or add new
+  const existingIdx = allAttempts.findIndex(a => a.id === state.attemptId);
+  if (existingIdx >= 0) {
+    allAttempts[existingIdx] = record;
+  } else {
     allAttempts.push(record);
-    saveAttempts();
   }
+  saveAttempts();
 }
 
 function showResults() {
