@@ -442,7 +442,18 @@ html, body {
 }
 
 /* Home actions */
-.home-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+.home-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+
+/* Visual settings row */
+.visual-settings {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.vs-label {
+  font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--ink-faint);
+}
 
 /* Changelog */
 .changelog-wrap { margin-top: 8px; }

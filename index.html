@@ -46,11 +46,6 @@
       <button data-mode="lab">◑ Lab</button>
       <button data-mode="vellum">◒ Vellum</button>
     </nav>
-    <nav class="font-toggle" aria-label="Font size">
-      <button data-font="normal">A</button>
-      <button data-font="large">A+</button>
-      <button data-font="xl">A++</button>
-    </nav>
     <span>Block Study</span>
     <span class="live">● Live</span>
     <span id="topClock" class="mono">—</span>
@@ -121,6 +116,20 @@
     <button class="btn" onclick="showHistory()">📊 Attempt history</button>
     <button class="btn" onclick="showAllStats()">📈 Summary stats</button>
     <button class="btn btn-red" onclick="if(confirm('Reset ALL quiz history? This cannot be undone.')) { resetAll(); }">Reset all data</button>
+  </div>
+  <div class="visual-settings">
+    <span class="vs-label">Theme</span>
+    <nav class="mode-toggle" aria-label="Theme">
+      <button data-mode="midnight">◐ Midnight</button>
+      <button data-mode="lab">◑ Lab</button>
+      <button data-mode="vellum">◒ Vellum</button>
+    </nav>
+    <span class="vs-label">Text size</span>
+    <nav class="font-toggle" aria-label="Font size">
+      <button data-font="normal">A</button>
+      <button data-font="large">A+</button>
+      <button data-font="xl">A++</button>
+    </nav>
   </div>
 </div>
   <div class="changelog-wrap">
