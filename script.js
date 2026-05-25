@@ -55,11 +55,13 @@ document.getElementById('gateEmail').addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════════════
 // VERSION & CHANGELOG
 // ═══════════════════════════════════════════════════════════════
-const QUIZ_VERSION = "v25.7";
+const QUIZ_VERSION = "v25.8";
 
 const CHANGELOG = [
-  { version:"v25.7", date:"25 May 2026", summary:"Font size control — A / A+ / A++ toggle in topbar, persisted across sessions, works across all three themes",
-    changes:["Add font size toggle (A / A+ / A++) in topbar alongside theme switcher","Three presets: Normal (default), Large (+18%), Extra Large (+38%)","Scales question text, answer option text, and explanation text","Font size preference saved to localStorage and restored on reload","Works correctly across Midnight, Lab, and Vellum themes"] },
+  { version:"v25.8", date:"25 May 2026", summary:"Font size control — move theme and text size toggles to home screen for reliable access on all devices",
+    changes:["Move font size (A / A+ / A++) and theme (Midnight / Lab / Vellum) toggles to a Visual Settings row on the home screen — always visible regardless of screen width","Fix font size toggle not working on mobile (was hidden off-screen in narrow topbar)","Theme toggle remains in topbar on desktop as well"] },
+  { version:"v25.7", date:"25 May 2026", summary:"Font size control — A / A+ / A++ toggle, persisted across sessions, works across all three themes",
+    changes:["Add font size toggle (A / A+ / A++) — three presets: Normal (default), Large (+18%), Extra Large (+38%)","Scales question text, answer option text, and explanation text","Font size preference saved to localStorage and restored on reload","Works correctly across Midnight, Lab, and Vellum themes"] },
   { version:"v25.6", date:"19 May 2026", summary:"High Yield SocPop — Pop questions updated to confirmed list; RCT section removed; forest plot image added to Systematic Reviews questions",
     changes:["Remove 8 RCT questions not in confirmed Pop question list","Add forest plot image to all 5 Systematic Reviews questions","Split pooled effect size / statistical significance into separate questions","Update picker counts: 58 total, 38 Pop, 20 Soc"] },
   { version:"v25.5", date:"19 May 2026", summary:"SAQ stats tab in Summary Stats — persist sessions and show topic/question breakdown",
