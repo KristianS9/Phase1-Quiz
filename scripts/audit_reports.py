@@ -1,54 +1,78 @@
 #!/usr/bin/env python3
 """
-audit_reports.py — Autonomous quiz question audit loop.
+audit_reports.py — Deterministic "hands" for the quiz question triage pipeline.
 
-Fetches "New" reports from the Notion database, analyses each with Claude,
-applies valid fixes to script.js, commits to main, and updates Notion.
+Classification and drafting of fixes happens for free inside the Claude Code
+scheduled task `phase1-quiz-daily-audit` (Notion MCP, no billed API calls).
+This script is the code-enforced safety layer that task shells out to: it
+independently re-checks the auto-deployability checklist (never trusts the
+task's own verdict alone), then — only if eligible — applies the fix to
+script.js, bumps the version, commits + pushes to main, updates the version
+Gist, and logs a full before/after diff, atomically with the deploy.
 
 Usage:
-    python3 scripts/audit_reports.py            # normal run
-    python3 scripts/audit_reports.py --dry-run  # analyse only, no commits
+    python3 scripts/audit_reports.py --apply-fix '<json>' [--dry-run]
+    python3 scripts/audit_reports.py --apply-fix '<json>' --human-approved
+    python3 scripts/audit_reports.py --changelog-rollup [--dry-run]
+
+--apply-fix JSON fields:
+    question_stem            str   — stem text to locate the question in script.js
+    fix_type                 str   — spelling_grammar | punctuation | formatting |
+                                      broken_link | mismatched_label | (anything else)
+    checklist                dict  — changes_correct_answer, changes_option_claim,
+                                      changes_explanation_claim,
+                                      label_confirmed_by_explanation (bools)
+    new_stem, new_options, new_correct_letter, new_explanation   — drafted fix
+                                      (omit any that don't change)
+    notion_page_id            str  — for the audit log's notion_page_ids
+    reasoning, checklist_result   str — carried into the audit log
+
+Without --human-approved, the fix is only applied if is_auto_deployable()
+passes. With --human-approved, the checklist gate is skipped (a person has
+already reviewed and approved it), but the mechanical apply/commit/log steps
+are identical.
+
+Prints a single JSON object to stdout:
+    {"deployed": true,  "commit_hash": ..., "new_version": ..., "old_version": ..., "diff": ...}
+    {"deployed": false, "reason": "..."}
 """
 
+from __future__ import annotations
+
+import argparse
 import datetime
 import json
-import os
 import re
 import subprocess
-import sys
 import urllib.error
 import urllib.request
+from collections import Counter
 from pathlib import Path
 
 # ─── Paths ────────────────────────────────────────────────────────────────────
-REPO_ROOT  = Path(__file__).resolve().parent.parent
-SCRIPT_JS  = REPO_ROOT / "script.js"
-AUDIT_LOG  = REPO_ROOT / "scripts" / "audit_log.jsonl"
-ENV_FILE   = REPO_ROOT / ".env"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+SCRIPT_JS = REPO_ROOT / "script.js"
+AUDIT_LOG = REPO_ROOT / "scripts" / "audit_log.jsonl"
+GIST_ID   = "e9043cd2ebc9585bc29a4725d7c1949b"  # not a secret — public gist id
 
 
-# ─── Environment ──────────────────────────────────────────────────────────────
-def load_env():
-    """Parse .env file and populate os.environ."""
-    if not ENV_FILE.exists():
-        print(f"[warn] .env not found at {ENV_FILE} — relying on existing environment variables")
-        return
-    for line in ENV_FILE.read_text().splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, _, val = line.partition("=")
-        os.environ.setdefault(key.strip(), val.strip())
+# ─── GitHub auth (reuses git's own stored credential, no separate secret) ─────
+def get_github_token() -> str | None:
+    try:
+        result = subprocess.run(
+            ["git", "credential", "fill"],
+            input="url=https://github.com\n\n",
+            capture_output=True, text=True, timeout=10,
+        )
+        for line in result.stdout.splitlines():
+            if line.startswith("password="):
+                return line.partition("=")[2].strip()
+    except Exception:
+        pass
+    return None
 
 
-def require_env(key: str) -> str:
-    val = os.environ.get(key)
-    if not val:
-        raise RuntimeError(f"Missing required environment variable: {key}")
-    return val
-
-
-# ─── HTTP helpers ─────────────────────────────────────────────────────────────
+# ─── HTTP helper ────────────────────────────────────────────────────────────────
 def _http(method: str, url: str, payload: dict | None, headers: dict) -> dict:
     data = json.dumps(payload).encode() if payload is not None else None
     req  = urllib.request.Request(url, data=data, headers=headers, method=method)
@@ -60,181 +84,7 @@ def _http(method: str, url: str, payload: dict | None, headers: dict) -> dict:
         raise RuntimeError(f"HTTP {e.code} {method} {url}: {body[:300]}") from e
 
 
-def notion_headers() -> dict:
-    return {
-        "Authorization": f"Bearer {require_env('NOTION_TOKEN')}",
-        "Content-Type":  "application/json",
-        "Notion-Version": "2022-06-28",
-    }
-
-
-def anthropic_headers() -> dict:
-    return {
-        "x-api-key":         require_env("ANTHROPIC_API_KEY"),
-        "anthropic-version": "2023-06-01",
-        "content-type":      "application/json",
-    }
-
-
-# ─── Notion: fetch reports ─────────────────────────────────────────────────────
-def fetch_new_reports() -> list[dict]:
-    """Return all Notion pages with Status = 'New'."""
-    db_id  = require_env("NOTION_DB_ID")
-    url    = f"https://api.notion.com/v1/databases/{db_id}/query"
-    hdrs   = notion_headers()
-    pages  = []
-    cursor = None
-
-    while True:
-        payload: dict = {"filter": {"property": "Status", "status": {"equals": "New"}}}
-        if cursor:
-            payload["start_cursor"] = cursor
-
-        data   = _http("POST", url, payload, hdrs)
-        pages += data.get("results", [])
-
-        if data.get("has_more"):
-            cursor = data["next_cursor"]
-        else:
-            break
-
-    return pages
-
-
-def parse_page(page: dict) -> dict:
-    """Extract structured fields from a raw Notion page object."""
-    props = page["properties"]
-
-    def rich(prop_name: str) -> str:
-        parts = props.get(prop_name, {}).get("rich_text", [])
-        return "".join(p["text"]["content"] for p in parts)
-
-    def title() -> str:
-        parts = props.get("Name", {}).get("title", [])
-        return "".join(p["text"]["content"] for p in parts)
-
-    return {
-        "page_id":    page["id"],
-        "name":       title(),                           # stem ≤200 chars
-        "issue_type": (props.get("Issue Type") or {}).get("select", {}).get("name", "Other"),
-        "description": rich("Description"),              # "reason — detail"
-        "question_id": rich("Question ID"),              # "lecture · Block N · QN · source"
-        "email":       (props.get("Reporter Email") or {}).get("email") or "",
-    }
-
-
-def fetch_page_children(page_id: str) -> dict:
-    """
-    Retrieve child blocks and extract full question stem, all 5 options,
-    and the correct answer letter.
-
-    Block structure (written by worker.js):
-        heading_3 "Question"
-        paragraph  <full stem text>
-        heading_3 "Options"
-        paragraph  "A: opt text"          (or "A: opt text  ✓" for correct)
-        paragraph  "B: ..."
-        ...
-    """
-    url  = f"https://api.notion.com/v1/blocks/{page_id}/children"
-    hdrs = notion_headers()
-    data = _http("GET", url, None, hdrs)
-
-    blocks = data.get("results", [])
-
-    stem    = ""
-    options = []
-    correct = ""
-    section = None
-
-    for block in blocks:
-        btype = block.get("type", "")
-        if btype == "heading_3":
-            text = "".join(
-                t["text"]["content"]
-                for t in block["heading_3"]["rich_text"]
-            )
-            section = text.strip().lower()
-            continue
-
-        if btype == "paragraph":
-            text = "".join(
-                t["text"]["content"]
-                for t in block["paragraph"]["rich_text"]
-            )
-            text = text.strip()
-            if section == "question":
-                stem = text
-            elif section == "options" and text:
-                is_correct = text.endswith("  ✓")
-                clean = re.sub(r"\s+✓$", "", text).strip()
-                # strip "A: " prefix
-                option_text = re.sub(r"^[A-E]:\s*", "", clean)
-                letter = text[0] if text and text[0] in "ABCDE" else ""
-                options.append(option_text)
-                if is_correct:
-                    correct = letter
-
-    return {"stem": stem, "options": options, "correct_letter": correct}
-
-
-# ─── Deduplication ────────────────────────────────────────────────────────────
-def deduplicate_reports(reports: list[dict]) -> list[dict]:
-    """
-    Group reports that describe the same question (same stem prefix).
-    Merges descriptions and page_ids; keeps a single entry per unique question.
-    """
-    groups: dict[str, dict] = {}
-    for r in reports:
-        key = r["stem"][:100] if r.get("stem") else r["name"][:100]
-        if key not in groups:
-            groups[key] = dict(r)
-            groups[key]["page_ids"] = [r["page_id"]]
-            groups[key]["all_descriptions"] = [r["description"]]
-        else:
-            groups[key]["page_ids"].append(r["page_id"])
-            groups[key]["all_descriptions"].append(r["description"])
-
-    # Merge multi-report descriptions
-    for g in groups.values():
-        if len(g["all_descriptions"]) > 1:
-            merged = "\n---\n".join(
-                f"Report {i+1}: {d}" for i, d in enumerate(g["all_descriptions"])
-            )
-            g["description"] = merged
-        else:
-            g["description"] = g["all_descriptions"][0]
-        del g["all_descriptions"]
-
-    return list(groups.values())
-
-
-# ─── Reason parsing ───────────────────────────────────────────────────────────
-def parse_original_reason(description: str) -> str:
-    """
-    The Description field is "reason — detail" (from submitReport() in script.js).
-    Extract the reason prefix (before " — ").
-    """
-    return description.split(" — ")[0].strip()
-
-
-REASON_OVERRIDES = {
-    "Poor distractor quality": "Poor distractor quality",
-}
-
-
-def effective_reason(report: dict) -> str:
-    """
-    Notion maps "Poor distractor quality" -> Issue Type "Other".
-    Recover the original reason from the Description field where needed.
-    """
-    if report["issue_type"] == "Other":
-        original = parse_original_reason(report["description"])
-        return REASON_OVERRIDES.get(original, "Other")
-    return report["issue_type"]
-
-
-# ─── Question lookup in script.js ─────────────────────────────────────────────
+# ─── Question lookup / patch ────────────────────────────────────────────────────
 def lookup_question_in_js(js_content: str, stem: str) -> tuple[int, list | None]:
     """
     Find the line in script.js that contains a JSON array whose first element
@@ -262,165 +112,16 @@ def lookup_question_in_js(js_content: str, stem: str) -> tuple[int, list | None]
             and isinstance(data[2], str) and data[2] in "ABCDE"
             and isinstance(data[3], str)
         ):
-            # Exact match
             if data[0] == stem_norm:
                 return i, data
-            # Prefix fallback: Notion truncates Name to 200 chars
             if len(stem_norm) >= 100 and data[0].startswith(stem_norm[:100]):
                 return i, data
 
     return -1, None
 
 
-# ─── Claude: analyse report ────────────────────────────────────────────────────
-ANALYSIS_SYSTEM = (
-    "You are an expert medical education auditor reviewing student-submitted reports "
-    "about MCQ quiz questions used in UK medical school (Phase 1 / pre-clinical). "
-    "Your task is to determine whether each report identifies a genuine problem and, "
-    "if so, provide a precise fix. Respond ONLY with valid JSON — no prose, no markdown fences."
-)
-
-ANALYSIS_USER = """\
-## Report
-Issue Type: {issue_type}
-User Description: {description}
-Reporter Email: {email}
-
-## Question
-Stem: {stem}
-
-Options:
-A: {opt_a}
-B: {opt_b}
-C: {opt_c}
-D: {opt_d}
-E: {opt_e}
-Correct answer: {correct_letter} — {correct_text}
-
-## Instructions
-Analyse this report and respond with a JSON object matching EXACTLY this schema:
-
-{{
-  "verdict": "fix" | "escalate" | "dismiss",
-  "confidence": "high" | "medium" | "low",
-  "issue_summary": "<one concise sentence describing the problem or why it was dismissed>",
-  "fix_type": "incorrect_answer" | "rewrite_distractors" | "clarify_wording" | null,
-  "new_correct_letter": "<A|B|C|D|E>" | null,
-  "new_options": ["<opt A>", "<opt B>", "<opt C>", "<opt D>", "<opt E>"] | null,
-  "new_stem": "<rewritten stem>" | null,
-  "explanation_needs_review": true | false,
-  "notion_note": "<brief explanation for the audit log, 1-2 sentences>"
-}}
-
-Rules:
-1. verdict="fix" only when you can provide a clear, medically accurate correction.
-2. "incorrect_answer": provide new_correct_letter AND new_options (reflecting all 5 updated options). Set explanation_needs_review=true.
-3. "rewrite_distractors": replace the 4 wrong options only. The correct answer must remain at its current letter position. new_options must have exactly 5 items.
-4. "clarify_wording": provide new_stem only; options and correct_letter unchanged.
-5. "Outdated Information" reports: ALWAYS verdict="escalate". Do not provide fix fields.
-6. verdict="escalate" or "dismiss": do NOT include fix fields (leave them null).
-7. All new option strings must be medically accurate, similar length, and plausible distractors.
-8. If the fix would require consulting recent medical literature, set verdict="escalate".
-9. explanation_needs_review=true only when the correct answer letter changes.
-"""
-
-VERIFY_SYSTEM = (
-    "You are an independent medical examiner verifying a proposed change to a UK pre-clinical MCQ. "
-    "Respond ONLY with valid JSON — no prose, no markdown fences."
-)
-
-VERIFY_USER = """\
-A previous analysis proposes changing the correct answer of this question.
-Please independently verify whether the proposed new correct answer is definitively correct
-according to current standard medical knowledge (UK medical school level).
-
-## Question
-Stem: {stem}
-
-Proposed updated options:
-A: {opt_a}
-B: {opt_b}
-C: {opt_c}
-D: {opt_d}
-E: {opt_e}
-Proposed correct answer: {new_correct_letter} — {new_correct_text}
-
-Original correct answer was: {original_correct_letter} — {original_correct_text}
-
-Respond with:
-{{
-  "verified": true | false,
-  "reasoning": "<one sentence explaining your determination>"
-}}
-"""
-
-
-def _claude(system: str, user: str) -> dict:
-    payload = {
-        "model":      "claude-sonnet-4-6",
-        "max_tokens": 1024,
-        "system":     system,
-        "messages":   [{"role": "user", "content": user}],
-    }
-    resp = _http("POST", "https://api.anthropic.com/v1/messages", payload, anthropic_headers())
-    raw  = resp["content"][0]["text"].strip()
-    # Strip accidental markdown fences
-    raw  = re.sub(r"^```(?:json)?\s*", "", raw)
-    raw  = re.sub(r"\s*```\s*$", "", raw)
-    return json.loads(raw)
-
-
-def analyse_report(report: dict) -> dict:
-    opts = report["options"]
-    user = ANALYSIS_USER.format(
-        issue_type    = effective_reason(report),
-        description   = report["description"],
-        email         = report.get("email") or "anonymous",
-        stem          = report["stem"],
-        opt_a=opts[0], opt_b=opts[1], opt_c=opts[2], opt_d=opts[3], opt_e=opts[4],
-        correct_letter = report["correct_letter"],
-        correct_text   = opts["ABCDE".index(report["correct_letter"])] if report["correct_letter"] in "ABCDE" else "",
-    )
-    return _claude(ANALYSIS_SYSTEM, user)
-
-
-def verify_answer_change(report: dict, analysis: dict) -> bool:
-    """
-    Second independent Claude call to verify a proposed correct-answer change.
-    Returns True only if Claude confirms the new answer is correct.
-    """
-    new_opts  = analysis["new_options"]
-    new_letter = analysis["new_correct_letter"]
-    new_idx    = "ABCDE".index(new_letter)
-    orig_opts  = report["options"]
-    orig_letter = report["correct_letter"]
-    orig_idx    = "ABCDE".index(orig_letter) if orig_letter in "ABCDE" else 0
-
-    user = VERIFY_USER.format(
-        stem              = report["stem"],
-        opt_a=new_opts[0], opt_b=new_opts[1], opt_c=new_opts[2],
-        opt_d=new_opts[3], opt_e=new_opts[4],
-        new_correct_letter = new_letter,
-        new_correct_text   = new_opts[new_idx],
-        original_correct_letter = orig_letter,
-        original_correct_text   = orig_opts[orig_idx] if orig_idx < len(orig_opts) else "",
-    )
-    result = _claude(VERIFY_SYSTEM, user)
-    return bool(result.get("verified", False))
-
-
-# ─── Apply fix to script.js ────────────────────────────────────────────────────
-def apply_fix_to_js(
-    js_path: Path,
-    line_idx: int,
-    original_q: list,
-    analysis: dict,
-) -> None:
-    """
-    Replace the question at line_idx in script.js.
-    Preserves original indentation and trailing comma.
-    Explanation field (index 3) is NEVER modified.
-    """
+def write_question_line(js_path: Path, line_idx: int, new_q: list) -> None:
+    """Overwrite the question array at line_idx, preserving indentation and trailing comma."""
     text  = js_path.read_text(encoding="utf-8")
     lines = text.splitlines(keepends=True)
 
@@ -429,12 +130,6 @@ def apply_fix_to_js(
     indent        = original_line[:indent_len]
     has_comma     = original_line.rstrip("\n").rstrip().endswith(",")
 
-    stem        = analysis.get("new_stem")       or original_q[0]
-    options     = analysis.get("new_options")    or original_q[1]
-    correct     = analysis.get("new_correct_letter") or original_q[2]
-    explanation = original_q[3]  # never touch this
-
-    new_q    = [stem, options, correct, explanation]
     new_line = indent + json.dumps(new_q, ensure_ascii=False)
     if has_comma:
         new_line += ","
@@ -444,21 +139,71 @@ def apply_fix_to_js(
     js_path.write_text("".join(lines), encoding="utf-8")
 
 
+def build_new_q(original_q: list, analysis: dict) -> list:
+    """Compose the drafted 'after' array from an analysis dict, falling back to original values."""
+    return [
+        analysis.get("new_stem") or original_q[0],
+        analysis.get("new_options") or original_q[1],
+        analysis.get("new_correct_letter") or original_q[2],
+        analysis.get("new_explanation") or original_q[3],
+    ]
+
+
+def build_diff_string(before: list, after: list) -> str:
+    """Human-readable before/after diff for the Notion 'Proposed Fix' field."""
+    parts = []
+    if before[0] != after[0]:
+        parts.append(f"Stem:\n- {before[0]}\n+ {after[0]}")
+    for i, letter in enumerate("ABCDE"):
+        if before[1][i] != after[1][i]:
+            parts.append(f"Option {letter}:\n- {before[1][i]}\n+ {after[1][i]}")
+    if before[2] != after[2]:
+        parts.append(f"Correct answer: {before[2]} → {after[2]}")
+    if before[3] != after[3]:
+        parts.append(f"Explanation:\n- {before[3][:200]}\n+ {after[3][:200]}")
+    if not parts:
+        return "(no changes drafted)"
+    return "\n\n".join(parts)[:1900]
+
+
+# ─── Deterministic checklist gate ──────────────────────────────────────────────
+SAFE_AUTO_TYPES = {"spelling_grammar", "punctuation", "formatting", "broken_link", "mismatched_label"}
+
+
+def is_auto_deployable(analysis: dict) -> tuple[bool, str]:
+    """
+    The actual auto-deploy decision. Does NOT trust the caller's verdict or
+    confidence alone — fix_type must be in the safe list AND the checklist
+    booleans must confirm no clinical-substance change, checked in code.
+    Returns (eligible, reason) — reason is only meaningful when not eligible.
+    """
+    fix_type = analysis.get("fix_type")
+    if fix_type not in SAFE_AUTO_TYPES:
+        return False, f"fix_type '{fix_type}' is not in the auto-deployable checklist"
+    checklist = analysis.get("checklist") or {}
+    if checklist.get("changes_correct_answer"):
+        return False, "checklist: changes the correct answer"
+    if checklist.get("changes_option_claim"):
+        return False, "checklist: changes an option's factual claim"
+    if checklist.get("changes_explanation_claim"):
+        return False, "checklist: changes the explanation's factual claim"
+    if fix_type == "mismatched_label" and not checklist.get("label_confirmed_by_explanation"):
+        return False, "mismatched_label but explanation does not unambiguously confirm the correct option"
+    return True, ""
+
+
 # ─── Version bump ──────────────────────────────────────────────────────────────
 def bump_version(js_path: Path) -> tuple[str, str]:
-    """
-    Increment the minor version in QUIZ_VERSION.
-    Returns (old_version, new_version).
-    """
+    """Increment the minor version in QUIZ_VERSION. Returns (old_version, new_version)."""
     content = js_path.read_text(encoding="utf-8")
     match   = re.search(r'const QUIZ_VERSION = "(v(\d+)\.(\d+))"', content)
     if not match:
         raise ValueError("QUIZ_VERSION not found in script.js")
 
-    old    = match.group(1)
-    major  = int(match.group(2))
-    minor  = int(match.group(3))
-    new    = f"v{major}.{minor + 1}"
+    old   = match.group(1)
+    major = int(match.group(2))
+    minor = int(match.group(3))
+    new   = f"v{major}.{minor + 1}"
 
     js_path.write_text(
         content.replace(f'const QUIZ_VERSION = "{old}"', f'const QUIZ_VERSION = "{new}"'),
@@ -467,10 +212,36 @@ def bump_version(js_path: Path) -> tuple[str, str]:
     return old, new
 
 
+def current_quiz_version(js_path: Path) -> str:
+    match = re.search(r'const QUIZ_VERSION = "(v[\d.]+)"', js_path.read_text(encoding="utf-8"))
+    return match.group(1) if match else "unknown"
+
+
 # ─── Audit log ────────────────────────────────────────────────────────────────
 def append_audit_log(entry: dict) -> None:
     with AUDIT_LOG.open("a", encoding="utf-8") as f:
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+
+def read_audit_log() -> list[dict]:
+    if not AUDIT_LOG.exists():
+        return []
+    entries = []
+    for line in AUDIT_LOG.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            entries.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return entries
+
+
+def rewrite_audit_log(entries: list[dict]) -> None:
+    with AUDIT_LOG.open("w", encoding="utf-8") as f:
+        for e in entries:
+            f.write(json.dumps(e, ensure_ascii=False) + "\n")
 
 
 # ─── Git ──────────────────────────────────────────────────────────────────────
@@ -487,26 +258,30 @@ def git(*args, cwd: Path = REPO_ROOT) -> str:
     return result.stdout.strip()
 
 
-def revert_script_js() -> None:
+def revert_to(pre_head: str) -> None:
+    """
+    Undo a failed apply attempt. Uses `reset --hard` (not `checkout -- <files>`)
+    because git_commit_push may have already created a local commit before the
+    push itself failed (e.g. a remote race, not just a pre-commit pull conflict)
+    — a file-level checkout would leave that commit sitting locally, to be
+    silently swept into the next run. Resetting to the pre-attempt HEAD undoes
+    both a dirty working tree (nothing committed yet) and an unpushed commit.
+    """
     try:
-        git("checkout", "--", "script.js")
-        print("[git] Reverted script.js changes")
+        git("reset", "--hard", pre_head)
+        print(f"[git] Reset to {pre_head} — reverted any local commit and working-tree changes")
     except subprocess.CalledProcessError:
-        print("[git] Could not revert script.js — manual check needed")
+        print("[git] Could not revert changes — manual check needed")
 
 
-def git_commit_push(new_version: str, summaries: list[str]) -> str:
-    """
-    Pull, stage script.js + audit_log.jsonl, commit, push.
-    Returns the commit hash.
-    """
+def git_commit_push(title: str, summaries: list[str]) -> str:
+    """Pull, stage script.js + audit_log.jsonl, commit, push. Returns the commit hash."""
     git("fetch", "origin")
     git("pull", "--ff-only", "origin", "main")
 
     git("add", "script.js", "scripts/audit_log.jsonl")
 
-    n   = len(summaries)
-    msg = f"Auto-fix {n} report(s) — {new_version}\n\n"
+    msg = f"{title}\n\n"
     msg += "\n".join(f"- {s}" for s in summaries)
     msg += "\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 
@@ -516,347 +291,170 @@ def git_commit_push(new_version: str, summaries: list[str]) -> str:
     return git("rev-parse", "--short", "HEAD")
 
 
-# ─── Gist update ──────────────────────────────────────────────────────────────
+# ─── Gist update (best effort — only affects the update-nag banner) ───────────
 def update_gist(new_version: str) -> None:
-    gist_id = require_env("GIST_ID")
-    token   = require_env("GITHUB_TOKEN")
-    payload = {
-        "files": {
-            "quiz_version.json": {
-                "content": json.dumps({"version": new_version})
-            }
-        }
-    }
-    _http(
-        "PATCH",
-        f"https://api.github.com/gists/{gist_id}",
-        payload,
-        {
-            "Authorization": f"Bearer {token}",
-            "Accept":        "application/vnd.github+json",
-            "User-Agent":    "phase1-quiz-audit",
-        },
-    )
-
-
-# ─── Notion: update pages ─────────────────────────────────────────────────────
-def update_notion_page(page_id: str, new_status: str, note: str) -> None:
-    hdrs = notion_headers()
-
-    # Update Status property
-    _http(
-        "PATCH",
-        f"https://api.notion.com/v1/pages/{page_id}",
-        {"properties": {"Status": {"status": {"name": new_status}}}},
-        hdrs,
-    )
-
-    # Append audit note as a child paragraph
-    timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
-    _http(
-        "PATCH",
-        f"https://api.notion.com/v1/blocks/{page_id}/children",
-        {
-            "children": [{
-                "object": "block",
-                "type":   "paragraph",
-                "paragraph": {
-                    "rich_text": [{
-                        "type": "text",
-                        "text": {"content": f"[Audit {timestamp}] {note}"}
-                    }]
-                },
-            }]
-        },
-        hdrs,
-    )
-
-
-def post_weekly_summary(stats: dict) -> None:
-    """Append a run summary block to the configured AUDIT_RUNS_PAGE_ID."""
-    audit_page = os.environ.get("AUDIT_RUNS_PAGE_ID")
-    if not audit_page:
-        print("[notify] AUDIT_RUNS_PAGE_ID not set — skipping weekly summary")
+    token = get_github_token()
+    if not token:
+        print("[gist] No GitHub token available via git credential helper — skipping gist update")
         return
-
-    now  = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
-    text = (
-        f"Run: {now}\n"
-        f"Reports processed: {stats['total']}\n"
-        f"Fixed: {stats['fixed']}"
-        + (f" (committed as {stats.get('new_version','')})" if stats['fixed'] else "")
-        + f"\nEscalated: {stats['escalated']}\n"
-        f"Dismissed: {stats['dismissed']}\n"
-        f"Errors: {stats['errors']}"
-    )
-    if stats.get("explanation_flags"):
-        text += f"\n\nExplanation review needed:\n" + "\n".join(
-            f"  - {q}" for q in stats["explanation_flags"]
+    payload = {"files": {"quiz_version.json": {"content": json.dumps({"version": new_version})}}}
+    try:
+        _http(
+            "PATCH",
+            f"https://api.github.com/gists/{GIST_ID}",
+            payload,
+            {
+                "Authorization": f"Bearer {token}",
+                "Accept":        "application/vnd.github+json",
+                "User-Agent":    "phase1-quiz-audit",
+            },
         )
-
-    _http(
-        "PATCH",
-        f"https://api.notion.com/v1/blocks/{audit_page}/children",
-        {
-            "children": [
-                {
-                    "object": "block",
-                    "type":   "heading_3",
-                    "heading_3": {"rich_text": [{"type": "text", "text": {"content": f"Audit Run — {now}"}}]},
-                },
-                {
-                    "object": "block",
-                    "type":   "paragraph",
-                    "paragraph": {
-                        "rich_text": [{"type": "text", "text": {"content": text}}]
-                    },
-                },
-            ]
-        },
-        notion_headers(),
-    )
+    except RuntimeError as exc:
+        print(f"[gist] Update failed (non-fatal): {exc}")
 
 
-# ─── Orchestration ─────────────────────────────────────────────────────────────
-STATUS_MAP = {
-    "fix":      "Fixed",
-    "escalate": "Needs Human Review",
-    "dismiss":  "Dismissed",
-    "error":    "Needs Human Review",
-}
+# ─── Apply a single fix ─────────────────────────────────────────────────────────
+def apply_fix(analysis: dict, human_approved: bool = False, dry_run: bool = False) -> dict:
+    if not human_approved:
+        eligible, reason = is_auto_deployable(analysis)
+        if not eligible:
+            return {"deployed": False, "reason": reason}
+
+    js_content = SCRIPT_JS.read_text(encoding="utf-8")
+    stem = analysis.get("question_stem", "")
+    line_idx, original_q = lookup_question_in_js(js_content, stem)
+    if line_idx == -1:
+        return {"deployed": False, "reason": "question not found in script.js"}
+
+    new_q = build_new_q(original_q, analysis)
+    diff  = build_diff_string(original_q, new_q)
+
+    if diff == "(no changes drafted)":
+        return {"deployed": False, "reason": "no actual change in drafted fix — nothing to deploy"}
+
+    if dry_run:
+        return {"deployed": False, "dry_run": True, "diff": diff}
+
+    write_question_line(SCRIPT_JS, line_idx, new_q)
+    old_v, new_version = bump_version(SCRIPT_JS)
+
+    today = datetime.date.today().isoformat()
+    append_audit_log({
+        "notion_page_ids": [analysis.get("notion_page_id", "")],
+        "question_id": stem[:80],
+        "issue_type": analysis.get("fix_type", ""),
+        "before": original_q, "after": new_q,
+        "classification": "auto-deployable" if not human_approved else "needs-approval",
+        "checklist_result": analysis.get("checklist_result", ""),
+        "reasoning": analysis.get("reasoning", ""),
+        "status": "Approved" if human_approved else "Auto-deployed",
+        "deployed_at": today,
+        "reviewer": analysis.get("reviewer", ""),
+        "fix_type": analysis.get("fix_type", ""),
+        "new_version": new_version,
+        "changelog_batched": False,
+    })
+
+    pre_head = git("rev-parse", "HEAD")
+    try:
+        commit_hash = git_commit_push(
+            f"Auto-fix: {analysis.get('fix_type', 'question fix')} — {new_version}",
+            [f"{analysis.get('fix_type', 'fix')}: {stem[:80]}"],
+        )
+    except subprocess.CalledProcessError as exc:
+        revert_to(pre_head)
+        return {"deployed": False, "reason": f"git push failed: {exc.stderr or exc}"}
+
+    update_gist(new_version)
+
+    return {
+        "deployed": True,
+        "commit_hash": commit_hash,
+        "new_version": new_version,
+        "old_version": old_v,
+        "diff": diff,
+    }
 
 
-def main(dry_run: bool = False) -> None:
-    load_env()
+# ─── Weekly changelog rollup ────────────────────────────────────────────────────
+def changelog_rollup(dry_run: bool = False) -> None:
+    """Roll up unbatched Auto-deployed/Approved log entries into a single new CHANGELOG entry."""
+    entries   = read_audit_log()
+    unbatched = [e for e in entries if e.get("status") in ("Auto-deployed", "Approved") and not e.get("changelog_batched", True)]
 
-    run_id = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M")
-    print(f"[audit] Run {run_id} — dry_run={dry_run}")
-
-    # 1. Fetch & parse new reports
-    raw_pages = fetch_new_reports()
-    if not raw_pages:
-        print("[audit] No new reports. Exiting.")
+    if not unbatched:
+        print("[changelog] Nothing to roll up.")
         return
 
-    print(f"[audit] {len(raw_pages)} raw report(s) fetched")
+    type_counts = Counter((e.get("fix_type") or "other").replace("_", " ") for e in unbatched)
+    parts = ", ".join(f"{n} {t}" for t, n in type_counts.items())
+    summary_line = (
+        f"Content auto-corrections: {len(unbatched)} fix(es) ({parts}) "
+        f"applied automatically this period — see scripts/audit_log.jsonl for detail."
+    )
 
-    reports = [parse_page(p) for p in raw_pages]
+    if dry_run:
+        print(f"[dry-run] Would roll up changelog: {summary_line}")
+        return
 
-    # 2. Enrich with child block data (full stem + options)
-    for r in reports:
-        children = fetch_page_children(r["page_id"])
-        r.update(children)
-
-    # 3. Deduplicate by question stem
-    reports = deduplicate_reports(reports)
-    print(f"[audit] {len(reports)} unique question(s) after deduplication")
-
-    # 4. Load script.js once
+    version    = current_quiz_version(SCRIPT_JS)
     js_content = SCRIPT_JS.read_text(encoding="utf-8")
 
-    # Tracking
-    fixed_entries    : list[dict]  = []   # entries ready to commit
-    notion_updates   : list[dict]  = []   # deferred Notion status updates
-    explanation_flags: list[str]   = []
+    marker = "const CHANGELOG = [\n"
+    idx = js_content.find(marker)
+    if idx == -1:
+        print("[changelog] Could not find CHANGELOG array in script.js — skipping rollup")
+        return
 
-    stats = {"total": len(reports), "fixed": 0, "escalated": 0, "dismissed": 0, "errors": 0}
-
-    for r in reports:
-        page_ids = r.get("page_ids", [r["page_id"]])
-        stem_preview = (r.get("stem") or r["name"])[:60]
-
-        print(f"[audit] Processing: {stem_preview!r}  ({effective_reason(r)})")
-
-        try:
-            # Hard escalation: Outdated Information
-            if effective_reason(r) == "Outdated Information":
-                note = "Outdated Information reports require medical literature verification — escalated automatically."
-                for pid in page_ids:
-                    notion_updates.append({"page_id": pid, "status": "Needs Human Review", "note": note})
-                append_audit_log({
-                    "run_id": run_id, "notion_page_ids": page_ids,
-                    "question_stem_preview": stem_preview, "issue_type": "Outdated Information",
-                    "verdict": "escalate", "confidence": None, "notion_note": note,
-                })
-                stats["escalated"] += 1
-                continue
-
-            # Find question in script.js
-            line_idx, original_q = lookup_question_in_js(js_content, r.get("stem") or r["name"])
-            if line_idx == -1:
-                note = "Audit could not locate this question in script.js — it may have already been updated."
-                for pid in page_ids:
-                    notion_updates.append({"page_id": pid, "status": "Needs Human Review", "note": note})
-                append_audit_log({
-                    "run_id": run_id, "notion_page_ids": page_ids,
-                    "question_stem_preview": stem_preview,
-                    "verdict": "error", "notion_note": note,
-                })
-                stats["errors"] += 1
-                continue
-
-            # Call Claude for analysis
-            analysis   = analyse_report(r)
-            verdict    = analysis.get("verdict", "escalate")
-            confidence = analysis.get("confidence", "low")
-
-            # Downgrade incorrect-answer fixes with non-high confidence
-            if (
-                analysis.get("fix_type") == "incorrect_answer"
-                and verdict == "fix"
-                and confidence != "high"
-            ):
-                verdict = "escalate"
-                analysis["notion_note"] = (
-                    f"Confidence was '{confidence}' for answer change — escalated for human review. "
-                    + analysis.get("notion_note", "")
-                )
-
-            # Two-pass verification for correct-answer changes
-            verified = None
-            if verdict == "fix" and analysis.get("fix_type") == "incorrect_answer":
-                print(f"[audit]   → Running verification pass for answer change...")
-                verified = verify_answer_change(r, analysis)
-                if not verified:
-                    verdict = "escalate"
-                    analysis["notion_note"] = (
-                        "Verification pass disagreed with proposed answer change — escalated for human review. "
-                        + analysis.get("notion_note", "")
-                    )
-
-            if verdict == "fix":
-                if dry_run:
-                    print(f"[dry-run] Would apply fix: {analysis.get('fix_type')} — {analysis.get('issue_summary')}")
-                    note = f"[DRY RUN] Would apply: {analysis.get('fix_type')}. {analysis.get('notion_note','')}"
-                    for pid in page_ids:
-                        notion_updates.append({"page_id": pid, "status": "Needs Human Review", "note": note})
-                    stats["escalated"] += 1
-                else:
-                    apply_fix_to_js(SCRIPT_JS, line_idx, original_q, analysis)
-                    # Reload content so subsequent lookups use updated line numbers
-                    js_content = SCRIPT_JS.read_text(encoding="utf-8")
-
-                    if analysis.get("explanation_needs_review"):
-                        explanation_flags.append(stem_preview)
-
-                    entry = {
-                        "run_id":               run_id,
-                        "notion_page_ids":      page_ids,
-                        "question_stem_preview": stem_preview,
-                        "issue_type":           effective_reason(r),
-                        "original_q":           original_q,
-                        "verdict":              "fix",
-                        "confidence":           confidence,
-                        "verified":             verified,
-                        "applied_fix": {
-                            "fix_type":          analysis.get("fix_type"),
-                            "new_correct_letter": analysis.get("new_correct_letter"),
-                            "new_options":        analysis.get("new_options"),
-                            "new_stem":           analysis.get("new_stem"),
-                        },
-                        "explanation_needs_review": analysis.get("explanation_needs_review", False),
-                        "notion_note":          analysis.get("notion_note", ""),
-                    }
-                    fixed_entries.append(entry)
-                    stats["fixed"] += 1
-
-            else:  # escalate or dismiss
-                notion_status = STATUS_MAP.get(verdict, "Needs Human Review")
-                note = analysis.get("notion_note", "")
-                for pid in page_ids:
-                    notion_updates.append({"page_id": pid, "status": notion_status, "note": note})
-                append_audit_log({
-                    "run_id":               run_id,
-                    "notion_page_ids":      page_ids,
-                    "question_stem_preview": stem_preview,
-                    "issue_type":           effective_reason(r),
-                    "verdict":              verdict,
-                    "confidence":           confidence,
-                    "notion_note":          note,
-                })
-                stats["escalated" if verdict == "escalate" else "dismissed"] += 1
-
-        except Exception as exc:
-            import traceback
-            print(f"[error] {exc}")
-            traceback.print_exc()
-            note = f"Audit script error: {type(exc).__name__}: {str(exc)[:200]}"
-            for pid in page_ids:
-                notion_updates.append({"page_id": pid, "status": "Needs Human Review", "note": note})
-            append_audit_log({
-                "run_id": run_id, "notion_page_ids": page_ids,
-                "question_stem_preview": stem_preview,
-                "verdict": "error", "notion_note": note,
-            })
-            stats["errors"] += 1
-
-    # 5. Commit fixes
-    commit_hash  = None
-    new_version  = None
-    commit_error = None
-
-    if fixed_entries and not dry_run:
-        try:
-            old_v, new_version = bump_version(SCRIPT_JS)
-            summaries = [
-                f"{e['issue_type']}: {e['notion_note'][:80]}" for e in fixed_entries
-            ]
-            commit_hash = git_commit_push(new_version, summaries)
-            update_gist(new_version)
-            stats["new_version"] = new_version
-            print(f"[git] Committed {len(fixed_entries)} fix(es) as {new_version} ({commit_hash})")
-        except subprocess.CalledProcessError as exc:
-            commit_error = exc.stderr or str(exc)
-            print(f"[git] Push failed: {commit_error}")
-            revert_script_js()
-            # Escalate all pending fixes
-            for entry in fixed_entries:
-                note = f"Fix was generated but git push failed: {commit_error[:200]}"
-                for pid in entry["notion_page_ids"]:
-                    notion_updates.append({"page_id": pid, "status": "Needs Human Review", "note": note})
-                entry["verdict"]     = "error"
-                entry["notion_note"] = note
-                append_audit_log(entry)
-            fixed_entries = []
-            stats["fixed"]  = 0
-            stats["errors"] += len(fixed_entries)
-
-    # 6. Write audit log entries for committed fixes
-    for entry in fixed_entries:
-        entry["commit_hash"] = commit_hash
-        entry["new_version"] = new_version
-        append_audit_log(entry)
-        # Queue Notion update
-        fix_note = (
-            f"Fixed in {new_version} (commit {commit_hash}). "
-            f"{entry.get('explanation_needs_review') and 'Explanation may need review. ' or ''}"
-            f"{entry.get('notion_note','')}"
-        )
-        for pid in entry["notion_page_ids"]:
-            notion_updates.append({"page_id": pid, "status": "Fixed", "note": fix_note})
-
-    # 7. Update all Notion pages
-    print(f"[notion] Updating {len(notion_updates)} page(s)...")
-    for upd in notion_updates:
-        try:
-            update_notion_page(upd["page_id"], upd["status"], upd["note"])
-        except Exception as exc:
-            print(f"[error] Failed to update Notion page {upd['page_id']}: {exc}")
-
-    # 8. Post weekly summary
-    stats["explanation_flags"] = explanation_flags
-    try:
-        post_weekly_summary(stats)
-    except Exception as exc:
-        print(f"[warn] Could not post weekly summary: {exc}")
-
-    # 9. Done
-    print(
-        f"[audit] Done. Fixed: {stats['fixed']}, Escalated: {stats['escalated']}, "
-        f"Dismissed: {stats['dismissed']}, Errors: {stats['errors']}"
+    today_human = datetime.date.today().strftime("%d %b %Y")
+    new_entry = (
+        f'  {{ version:"{version}", date:"{today_human}", '
+        f'summary:"Content auto-corrections from automated report triage",\n'
+        f'    changes:[{json.dumps(summary_line)}] }},\n'
     )
+    insert_at = idx + len(marker)
+    SCRIPT_JS.write_text(js_content[:insert_at] + new_entry + js_content[insert_at:], encoding="utf-8")
+
+    unbatched_ids = {id(e) for e in unbatched}
+    for e in entries:
+        if id(e) in unbatched_ids:
+            e["changelog_batched"] = True
+    rewrite_audit_log(entries)
+
+    pre_head = git("rev-parse", "HEAD")
+    try:
+        commit_hash = git_commit_push(
+            f"Changelog rollup — {len(unbatched)} auto-correction(s) ({version})",
+            [summary_line],
+        )
+        print(f"[changelog] Rolled up {len(unbatched)} entries into CHANGELOG ({version}, {commit_hash})")
+    except subprocess.CalledProcessError as exc:
+        print(f"[changelog] Commit/push failed: {exc.stderr or exc}")
+        revert_to(pre_head)
+
+
+# ─── CLI ────────────────────────────────────────────────────────────────────────
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--apply-fix", metavar="JSON", help="Apply one drafted fix (JSON string)")
+    parser.add_argument("--human-approved", action="store_true", help="Skip the checklist gate — a human already approved this fix")
+    parser.add_argument("--changelog-rollup", action="store_true", help="Roll up unbatched auto-deployed/approved entries into CHANGELOG")
+    parser.add_argument("--dry-run", action="store_true", help="Analyse/print only, no writes")
+    args = parser.parse_args()
+
+    if args.apply_fix:
+        try:
+            analysis = json.loads(args.apply_fix)
+        except json.JSONDecodeError as exc:
+            print(json.dumps({"deployed": False, "reason": f"invalid JSON: {exc}"}))
+            return
+        result = apply_fix(analysis, human_approved=args.human_approved, dry_run=args.dry_run)
+        print(json.dumps(result))
+    elif args.changelog_rollup:
+        changelog_rollup(dry_run=args.dry_run)
+    else:
+        parser.print_help()
 
 
 if __name__ == "__main__":
-    dry = "--dry-run" in sys.argv
-    main(dry_run=dry)
+    main()
