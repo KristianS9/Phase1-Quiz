@@ -55,9 +55,11 @@ document.getElementById('gateEmail').addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════════════
 // VERSION & CHANGELOG
 // ═══════════════════════════════════════════════════════════════
-const QUIZ_VERSION = "v25.10";
+const QUIZ_VERSION = "v25.11";
 
 const CHANGELOG = [
+  { version:"v25.11", date:"22 Jul 2026", summary:"Question report triage pipeline rebuilt — deterministic, zero-cost, code-gated auto-fixes",
+    changes:["Reported-question review pipeline moved to a free Claude Code scheduled task (no billed API calls) that classifies reports via Notion, and a local script that mechanically applies only checklist-safe fixes (spelling/grammar, punctuation, formatting, broken links, mismatched option labels)","Any fix that would change the correct answer, an option's claim, or the explanation's claim now always requires human approval before it can go live — enforced in code, not left to the model's own judgement","Every applied fix — auto-deployed or human-approved — is logged with a full before/after diff, atomically with the deploy","Failed deploys (e.g. a git push conflict) now fully revert, including any commit that had already been created, so nothing is left half-applied","No behaviour change for students — this is a backend content-review tool, not a quiz feature"] },
   { version:"v25.10", date:"31 May 2026", summary:"High-Yield PPT — Block 4 End of Block questions added",
     changes:["14 new Block 4 End-of-Block PPT questions added covering pharmacology topics from Block 4","High-Yield PPT tile now shows 79 total questions across 5 lecture groups"] },
   { version:"v25.9", date:"25 May 2026", summary:"High-Yield PPT expanded — End of Block questions for Blocks 1–3 added",
