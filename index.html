@@ -116,6 +116,7 @@
   <div class="home-actions">
     <button class="btn" onclick="showHistory()">📊 Attempt history</button>
     <button class="btn" onclick="showAllStats()">📈 Summary stats</button>
+    <button class="btn" id="examScoreBtn" onclick="openExamScoreDialog()">📝 Submit your exam score</button>
     <button class="btn btn-red" onclick="if(confirm('Reset ALL quiz history? This cannot be undone.')) { resetAll(); }">Reset all data</button>
   </div>
   <div class="visual-settings">
@@ -336,6 +337,13 @@
         <button class="btn btn-red" onclick="submitReport()">Submit report</button>
       </div>
     </div>
+  </div>
+</div>
+
+<div id="examOverlay" class="report-overlay" style="display:none" onclick="if(event.target===this)closeExamScore()">
+  <div class="report-dialog exam-dialog">
+    <h3>&#128221; Submit Exam Score</h3>
+    <div id="esBody"></div>
   </div>
 </div>
 </body>

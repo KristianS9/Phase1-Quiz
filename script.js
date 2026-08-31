@@ -55,9 +55,11 @@ document.getElementById('gateEmail').addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════════════
 // VERSION & CHANGELOG
 // ═══════════════════════════════════════════════════════════════
-const QUIZ_VERSION = "v25.11";
+const QUIZ_VERSION = "v25.12";
 
 const CHANGELOG = [
+  { version:"v25.12", date:"31 Aug 2026", summary:"Anonymous exam score submission — measure app efficacy against real Phase 1 results",
+    changes:["New 'Submit your exam score' button on the home screen","Fully anonymous — no email, name, IP, or device info collected; only numeric app-usage stats and your self-reported exam %","Auto-computed app stats sent alongside your score: overall accuracy, first-pass (non-random) accuracy, questions answered, practice sessions, SAQ questions attempted","One submission per browser — button shows a confirmation state once submitted","Submissions go to a separate, anonymous-only Notion database used solely for correlating app usage with exam performance"] },
   { version:"v25.11", date:"22 Jul 2026", summary:"Question report triage pipeline rebuilt — deterministic, zero-cost, code-gated auto-fixes",
     changes:["Reported-question review pipeline moved to a free Claude Code scheduled task (no billed API calls) that classifies reports via Notion, and a local script that mechanically applies only checklist-safe fixes (spelling/grammar, punctuation, formatting, broken links, mismatched option labels)","Any fix that would change the correct answer, an option's claim, or the explanation's claim now always requires human approval before it can go live — enforced in code, not left to the model's own judgement","Every applied fix — auto-deployed or human-approved — is logged with a full before/after diff, atomically with the deploy","Failed deploys (e.g. a git push conflict) now fully revert, including any commit that had already been created, so nothing is left half-applied","No behaviour change for students — this is a backend content-review tool, not a quiz feature"] },
   { version:"v25.10", date:"31 May 2026", summary:"High-Yield PPT — Block 4 End of Block questions added",
@@ -2341,6 +2343,104 @@ async function submitReport() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// EXAM SCORE SUBMISSION (anonymous)
+// ═══════════════════════════════════════════════════════════════
+const EXAM_SUBMITTED_KEY = 'p1quiz_exam_submitted';
+
+// Computes lifetime app-usage stats client-side from existing attempt history.
+// Nothing here is sent anywhere until the user explicitly submits.
+function computeExamStats() {
+  let answered = 0, correct = 0;
+  let fpAnswered = 0, fpCorrect = 0; // first-pass = sequential (non-random) attempts only
+  allAttempts.forEach(a => {
+    answered += a.answered || 0;
+    correct  += a.correct  || 0;
+    if (!a.isRandom && !a.isAllRandom) {
+      fpAnswered += a.answered || 0;
+      fpCorrect  += a.correct  || 0;
+    }
+  });
+  const saqAttempted = allSaqAttempts.reduce((s, a) => s + (a.total || 0), 0);
+  return {
+    appAccuracyPct: answered ? Math.round(correct / answered * 100) : 0,
+    firstPassAccuracyPct: fpAnswered ? Math.round(fpCorrect / fpAnswered * 100) : null,
+    questionsAnswered: answered,
+    attemptsCount: allAttempts.length,
+    saqAttempted
+  };
+}
+
+function updateExamScoreBtn() {
+  const btn = document.getElementById('examScoreBtn');
+  if (!btn) return;
+  if (localStorage.getItem(EXAM_SUBMITTED_KEY)) {
+    btn.textContent = '✓ Exam score submitted — thank you';
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.style.cursor = 'default';
+  }
+}
+
+function openExamScoreDialog() {
+  if (localStorage.getItem(EXAM_SUBMITTED_KEY)) return;
+  const stats = computeExamStats();
+  document.getElementById('esBody').innerHTML = `
+    <p class="es-note">This is completely anonymous — no email, name, or device info is collected, and nothing here can be traced back to you. We're only measuring whether using this app correlates with real exam performance.</p>
+    <span class="rd-label">What % did you get in your Phase 1 exam? <span style="color:var(--bad)">*</span></span>
+    <input type="number" class="gate-input" id="esScore" min="0" max="100" step="0.1" placeholder="e.g. 68">
+    <span class="rd-label" style="margin-top:14px">We'll also send</span>
+    <div class="es-preview">
+      Questions answered: ${stats.questionsAnswered}<br>
+      Practice sessions: ${stats.attemptsCount}<br>
+      Overall app accuracy: ${stats.appAccuracyPct}%<br>
+      First-pass accuracy: ${stats.firstPassAccuracyPct !== null ? stats.firstPassAccuracyPct + '%' : '– (no sequential attempts yet)'}<br>
+      SAQ questions attempted: ${stats.saqAttempted}
+    </div>
+    <div class="report-footer">
+      <button class="btn" onclick="closeExamScore()">Cancel</button>
+      <button class="btn" id="esSubmitBtn" onclick="submitExamScore()">Submit</button>
+    </div>`;
+  document.getElementById('examOverlay').style.display = 'flex';
+}
+
+function closeExamScore() {
+  document.getElementById('examOverlay').style.display = 'none';
+}
+
+async function submitExamScore() {
+  const input = document.getElementById('esScore');
+  const examScorePct = parseFloat(input.value);
+  if (!input.value || isNaN(examScorePct) || examScorePct < 0 || examScorePct > 100) {
+    input.style.borderColor = 'rgba(255,107,122,0.6)';
+    return;
+  }
+  const stats = computeExamStats();
+  document.getElementById('esBody').innerHTML = '<div class="report-msg" style="color:var(--ink-dim)">Submitting…</div>';
+  try {
+    const resp = await fetch('https://fidus.kristian-s.workers.dev/api/exam-score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        examScorePct,
+        appAccuracyPct: stats.appAccuracyPct,
+        firstPassAccuracyPct: stats.firstPassAccuracyPct,
+        questionsAnswered: stats.questionsAnswered,
+        attemptsCount: stats.attemptsCount,
+        saqAttempted: stats.saqAttempted,
+        quizVersion: QUIZ_VERSION,
+      }),
+    });
+    if (!resp.ok) throw new Error('server error');
+    localStorage.setItem(EXAM_SUBMITTED_KEY, '1');
+    document.getElementById('esBody').innerHTML = '<div class="es-thanks"><div class="es-icon">&#10003;</div>Thank you — your anonymous submission helps measure how well this tool works.</div>';
+    updateExamScoreBtn();
+    setTimeout(() => { closeExamScore(); }, 2200);
+  } catch(e) {
+    document.getElementById('esBody').innerHTML = `<div class="report-msg" style="color:var(--bad)">&#10007; Could not submit — check your connection</div><div class="report-footer" style="margin-top:12px"><button class="btn" onclick="closeExamScore()">Close</button></div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // RESUME SYSTEM
 // ═══════════════════════════════════════════════════════════════
 const RESUME_KEY = 'p1quiz_resume';
@@ -4225,3 +4325,4 @@ document.querySelector('.mode-toggle')?.addEventListener('click',e=>{const btn=e
 document.querySelector('.font-toggle')?.addEventListener('click',e=>{const btn=e.target.closest('button[data-font]');if(btn)applyFontSize(btn.dataset.font);});
 initTheme();
 initFontSize();
+updateExamScoreBtn();
