@@ -1006,6 +1006,14 @@ canvas { max-width: 100%; border-radius: var(--radius); }
 .report-footer { display:flex; justify-content:flex-end; gap:8px; }
 .report-msg { text-align:center; padding:16px 0; font-family:var(--font-mono); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; }
 
+/* EXAM SCORE SUBMISSION (reuses .report-overlay/.report-dialog, neutral accent instead of red) */
+.exam-dialog::before, .exam-dialog::after { border-color:var(--accent); }
+.exam-dialog h3 { color:var(--accent); }
+.es-note { font-size:12px; color:var(--ink-dim); line-height:1.6; margin-bottom:14px; }
+.es-preview { background:var(--bg-0); border:1px solid var(--card-border); border-radius:2px; padding:10px 12px; font-size:12px; color:var(--ink-dim); line-height:1.7; margin-bottom:14px; font-family:var(--font-mono); }
+.es-thanks { text-align:center; padding:24px 0 8px; }
+.es-thanks .es-icon { font-size:28px; margin-bottom:8px; }
+
 /* ── Missing stats/results UI classes ─────────────────────────── */
 .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:1rem; }
 @media(max-width:480px) { .stat-grid { grid-template-columns:repeat(2,1fr); } }
