@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import difflib
 import json
 import re
 import subprocess
@@ -192,6 +193,115 @@ def is_auto_deployable(analysis: dict) -> tuple[bool, str]:
     return True, ""
 
 
+# ─── Independent diff-check (does not trust the caller's checklist at all) ────
+# is_auto_deployable() above only checks the booleans the caller *claims* about
+# its own drafted fix. This second gate re-derives what actually changed from
+# original_q/new_q and cross-checks it against those claims, so a fix that is
+# mislabeled (e.g. "spelling_grammar" but actually swaps a clinical term) still
+# gets caught even if the checklist says everything is safe.
+#
+# Quiz text is often short (a 5-word option), so plain word-overlap similarity
+# is a weak signal: swapping one word out of five ("Na" -> "Ca" channels —
+# a completely different drug class) still scores ~0.8 Jaccard. Instead we pair
+# up the specific words that changed and require each pair to be a close
+# character-level match (i.e. looks like a typo fix, not a different word) —
+# "recieve"/"receive" passes, "Na"/"Ca" does not.
+CHAR_SIM_TYPO_THRESHOLD = 0.6
+
+
+def _tokens(text: str) -> list[str]:
+    return re.findall(r"[a-z0-9]+", text.lower())
+
+
+def _char_similarity(a: str, b: str) -> float:
+    return difflib.SequenceMatcher(None, a, b).ratio()
+
+
+def _is_cosmetic_word_diff(old_text: str, new_text: str) -> bool:
+    """
+    True if every word added/removed between old_text and new_text pairs up
+    with a character-similar counterpart on the other side (i.e. looks like
+    spelling/typo correction), rather than an unrelated word appearing or
+    disappearing (i.e. a substantive content change).
+    """
+    old_counts, new_counts = Counter(_tokens(old_text)), Counter(_tokens(new_text))
+    removed = list((old_counts - new_counts).elements())
+    added   = list((new_counts - old_counts).elements())
+    if not removed and not added:
+        return True
+    if len(removed) != len(added):
+        return False
+    remaining = added[:]
+    for r in removed:
+        if not remaining:
+            return False
+        best = max(remaining, key=lambda a: _char_similarity(r, a))
+        if _char_similarity(r, best) < CHAR_SIM_TYPO_THRESHOLD:
+            return False
+        remaining.remove(best)
+    return True
+
+
+def _word_overlap_ratio(a: str, b: str) -> float:
+    """Word-level Jaccard similarity — used only for the looser broken_link check."""
+    wa, wb = set(_tokens(a)), set(_tokens(b))
+    if not wa and not wb:
+        return 1.0
+    if a == b:
+        return 1.0
+    return len(wa & wb) / len(wa | wb)
+
+
+def _passes_cosmetic_check(old_text: str, new_text: str, fix_type: str) -> tuple[bool, str]:
+    """Field-level cosmetic-diff check dispatched by fix_type. Returns (ok, reason)."""
+    if old_text == new_text:
+        return True, ""
+    if fix_type in ("spelling_grammar", "punctuation", "formatting"):
+        if _is_cosmetic_word_diff(old_text, new_text):
+            return True, ""
+        return False, f"word-level diff doesn't look like a pure {fix_type} fix (a word was replaced with an unrelated word, not corrected)"
+    if fix_type == "mismatched_label":
+        return False, "mismatched_label fix should only change which option letter is marked correct, not option/stem/explanation text"
+    if fix_type == "broken_link":
+        ratio = _word_overlap_ratio(old_text, new_text)
+        if ratio >= 0.5:
+            return True, ""
+        return False, f"text changed too much for a broken_link fix (word overlap {ratio:.2f})"
+    return False, f"fix_type '{fix_type}' is not covered by the cosmetic diff check"
+
+
+def verify_checklist_against_diff(original_q: list, new_q: list, analysis: dict) -> tuple[bool, str]:
+    """
+    Independently re-derive the actual before/after diff and cross-check it
+    against the caller's fix_type/checklist claims. Returns (ok, reason).
+    Only meant to gate the auto-deploy path — human-approved fixes skip this,
+    since a person has already reviewed the real diff and substantive changes
+    (e.g. answer-key corrections) are expected there.
+    """
+    fix_type = analysis.get("fix_type")
+    checklist = analysis.get("checklist") or {}
+
+    if (original_q[2] != new_q[2]) and not checklist.get("changes_correct_answer"):
+        return False, "diff-check: correct answer letter actually changed but checklist claimed it didn't"
+
+    ok, reason = _passes_cosmetic_check(original_q[0], new_q[0], fix_type)
+    if not ok:
+        return False, f"diff-check: stem — {reason}"
+
+    for i, letter in enumerate("ABCDE"):
+        if original_q[1][i] != new_q[1][i] and not checklist.get("changes_option_claim"):
+            ok, reason = _passes_cosmetic_check(original_q[1][i], new_q[1][i], fix_type)
+            if not ok:
+                return False, f"diff-check: option {letter} — {reason}"
+
+    if original_q[3] != new_q[3] and not checklist.get("changes_explanation_claim"):
+        ok, reason = _passes_cosmetic_check(original_q[3], new_q[3], fix_type)
+        if not ok:
+            return False, f"diff-check: explanation — {reason}"
+
+    return True, ""
+
+
 # ─── Version bump ──────────────────────────────────────────────────────────────
 def bump_version(js_path: Path) -> tuple[str, str]:
     """Increment the minor version in QUIZ_VERSION. Returns (old_version, new_version)."""
@@ -327,6 +437,12 @@ def apply_fix(analysis: dict, human_approved: bool = False, dry_run: bool = Fals
         return {"deployed": False, "reason": "question not found in script.js"}
 
     new_q = build_new_q(original_q, analysis)
+
+    if not human_approved:
+        diff_ok, diff_reason = verify_checklist_against_diff(original_q, new_q, analysis)
+        if not diff_ok:
+            return {"deployed": False, "reason": diff_reason}
+
     diff  = build_diff_string(original_q, new_q)
 
     if diff == "(no changes drafted)":
